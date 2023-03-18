@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.5.0;
+pragma solidity ^0.8.0;
 import "./CharityStorage.sol";
 
 contract Charity {
@@ -10,7 +10,7 @@ contract Charity {
     event charityDeactivated(address charity);
     event charityActivated(address charity);
 
-    constructor(CharityStorage charityAddress) public {
+    constructor(CharityStorage charityAddress) {
         owner = msg.sender;
         charityStorage = charityAddress;
     }
