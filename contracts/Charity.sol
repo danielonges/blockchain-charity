@@ -31,4 +31,15 @@ contract Charity {
     function activateCharity(uint256 charityId) public {
         charityStorage.setCharityActive(charityId, true);
     }
+
+    function isOwnerOfCharity(
+        uint256 charityId,
+        address charityOwner
+    ) public view returns (bool) {
+        return charityStorage.getCharityOwner(charityId) == charityOwner;
+    }
+
+    function isCharityActive(uint256 charityId) public view returns (bool) {
+        return charityStorage.getCharityActive(charityId);
+    }
 }
