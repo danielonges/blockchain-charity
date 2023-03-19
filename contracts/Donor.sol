@@ -8,9 +8,10 @@ contract Donor {
     DonorStorage donorStorage;
     CharityToken tokenContract;
 
-    event DonorVerified(address donor);
-    event DonorDeactivated(address donor);
-    event DonorActivated(address donor);
+    event donorVerified(address donor);
+    event donorDeactivated(address donor);
+    event donorActivated(address donor);
+    event buyCredits(address donor);
 
     constructor(DonorStorage donorAddress, CharityToken token) {
         owner = msg.sender;
@@ -44,15 +45,17 @@ contract Donor {
 
     function verifyDonor(address donorAddr) public ownerOnly {
         donorStorage.addDonor(donorAddr);
-        emit DonorVerified(donorAddr);
+        emit donorVerified(donorAddr);
     }
 
-    function deactivateDonor(uint256 charityId) public ownerOnly {
-        donorStorage.setDonorActive(charityId, false);
+    function deactivateDonor(uint256 donorId) public ownerOnly {
+        donorStorage.setDonorActive(donorId, false);
+        emit donorDeactivated(donorStorage.getDonorAddr(donorId));
     }
 
-    function activateCharity(uint256 charityId) public ownerOnly {
-        donorStorage.setDonorActive(charityId, true);
+    function activateCharity(uint256 donorId) public ownerOnly {
+        donorStorage.setDonorActive(donorId, true);
+        emit donorActivated(donorStorage.getDonorAddr(donorId));
     }
 
     function checkTokenBalance(
@@ -73,5 +76,16 @@ contract Donor {
 
         payable(msg.sender).transfer(weiAmt);
         tokenContract.transferTokens(address(this), numTokens);
+    }
+
+    function getTokens(
+        uint256 donorId
+    ) public payable isValidDonor(donorId) donorOnly(donorId) {
+        require(
+            msg.value >= 1E16,
+            "At least 0.01ETH is required to get CharityToken"
+        );
+        tokenContract.getTokens(msg.sender, msg.value / 1E16);
+        emit buyCredits(msg.sender);
     }
 }

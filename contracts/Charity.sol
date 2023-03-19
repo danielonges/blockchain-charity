@@ -8,9 +8,10 @@ contract Charity {
     CharityStorage charityStorage;
     CharityToken charityTokenContract;
 
-    event CharityVerified(address charity);
-    event CharitytDeactivated(address charity);
-    event CharityActivated(address charity);
+    event charityVerified(address charity);
+    event charitytDeactivated(address charity);
+    event charityActivated(address charity);
+    event withdrawCredits(address charity);
 
     constructor(
         CharityStorage charityAddress,
@@ -59,15 +60,17 @@ contract Charity {
         CharityStorage.charityCategory category
     ) public ownerOnly {
         charityStorage.addCharity(charityOwner, name, category);
-        emit CharityVerified(charityOwner);
+        emit charityVerified(charityOwner);
     }
 
     function deactivateCharity(uint256 charityId) public ownerOnly {
         charityStorage.setCharityActive(charityId, false);
+        emit charitytDeactivated(charityStorage.getCharityOwner(charityId));
     }
 
     function activateCharity(uint256 charityId) public ownerOnly {
         charityStorage.setCharityActive(charityId, true);
+        emit charityActivated(charityStorage.getCharityOwner(charityId));
     }
 
     function checkTokenBalance(
@@ -96,6 +99,7 @@ contract Charity {
 
         payable(msg.sender).transfer(weiAmt);
         charityTokenContract.transferTokens(address(this), numTokens); // transfer CT back to this contract address
+        emit withdrawCredits(msg.sender);
     }
 
     function lockWallet(
