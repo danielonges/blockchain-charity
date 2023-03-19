@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.5.0;
+pragma solidity ^0.8.0;
 import "./CharityStorage.sol";
 import "./CharityToken.sol";
 
@@ -8,14 +8,14 @@ contract Charity {
     CharityStorage charityStorage;
     CharityToken charityTokenContract;
 
-    event charityVerified(address charity);
-    event charityDeactivated(address charity);
-    event charityActivated(address charity);
+    event CharityVerified(address charity);
+    event CharitytDeactivated(address charity);
+    event CharityActivated(address charity);
 
     constructor(
         CharityStorage charityAddress,
         CharityToken charityTokenAddress
-    ) public {
+    ) {
         owner = msg.sender;
         charityStorage = charityAddress;
         charityTokenContract = charityTokenAddress;
@@ -31,7 +31,7 @@ contract Charity {
 
     modifier isValidCharity(uint256 charityId) {
         require(
-            charityId < charityStorage.getTotalCharities(),
+            charityStorage.getCharityActive(charityId),
             "Charity ID given is not valid"
         );
         _;
@@ -39,7 +39,7 @@ contract Charity {
 
     modifier owningCharityOnly(uint256 charityId) {
         require(
-            isOwnerOfCharity(charityId, msg.sender) == true,
+            isOwnerOfCharity(charityId, msg.sender),
             "Only owning charity can perform this action!"
         );
         _;
@@ -47,7 +47,7 @@ contract Charity {
 
     modifier walletNotLocked(uint256 charityId) {
         require(
-            charityStorage.getCharityWalletLocked(charityId) == false,
+            !charityStorage.getCharityWalletLocked(charityId),
             "Wallet is locked and tokens cannot be withdrawn"
         );
         _;
@@ -57,20 +57,22 @@ contract Charity {
         address charityOwner,
         string memory name,
         CharityStorage.charityCategory category
-    ) public {
+    ) public ownerOnly {
         charityStorage.addCharity(charityOwner, name, category);
-        emit charityVerified(charityOwner);
+        emit CharityVerified(charityOwner);
     }
 
-    function deactivateCharity(uint256 charityId) public {
+    function deactivateCharity(uint256 charityId) public ownerOnly {
         charityStorage.setCharityActive(charityId, false);
     }
 
-    function activateCharity(uint256 charityId) public {
+    function activateCharity(uint256 charityId) public ownerOnly {
         charityStorage.setCharityActive(charityId, true);
     }
 
-    function checkTokenBalance() public view returns (uint256) {
+    function checkTokenBalance(
+        uint256 charityId
+    ) public view owningCharityOnly(charityId) returns (uint256) {
         return charityTokenContract.checkBalance(msg.sender);
     }
 
@@ -83,7 +85,7 @@ contract Charity {
         owningCharityOnly(charityId)
         walletNotLocked(charityId)
     {
-        uint256 charityTokensBalance = checkTokenBalance();
+        uint256 charityTokensBalance = checkTokenBalance(charityId);
         require(
             numTokens <= charityTokensBalance,
             "You don't have enough tokens"
@@ -92,7 +94,7 @@ contract Charity {
         uint256 etherAmt = numTokens / 100;
         uint256 weiAmt = 1000000000000000000 * etherAmt;
 
-        msg.sender.transfer(weiAmt);
+        payable(msg.sender).transfer(weiAmt);
         charityTokenContract.transferTokens(address(this), numTokens); // transfer CT back to this contract address
     }
 
