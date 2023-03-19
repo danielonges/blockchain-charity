@@ -23,8 +23,8 @@ contract CharityStorage {
 
     address public owner = msg.sender; // set deployer as owner of the storage contract
     mapping(uint256 => charity) charities;
-    uint256 numCharities = 0; // total number of charities
-    // charity[] verifiedCharities;
+    // uint256 numCharities = 0; // total number of charities
+    charity[] allCharities;
 
     modifier ownerOnly() {
         require(
@@ -57,7 +57,7 @@ contract CharityStorage {
         );
 
         charities[charityIdCtr] = newCharity;
-        // verifiedCharities.push(newCharity);
+        allCharities.push(newCharity);
 
         return charityIdCtr++;
     }
@@ -86,7 +86,11 @@ contract CharityStorage {
         charities[id].isWalletLocked = locked;
     }
 
-    function getTotalCharities() public view returns (uint256) {
-        return numCharities;
+    function getNumCharities() public view returns (uint256) {
+        return allCharities.length;
+    }
+
+    function getAllCharities() public view returns (charity[] memory) {
+        return allCharities;
     }
 }
