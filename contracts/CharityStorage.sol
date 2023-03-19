@@ -16,12 +16,14 @@ contract CharityStorage {
         string name;
         charityCategory category;
         bool isActive;
+        bool isWalletLocked;
     }
 
     uint256 charityIdCtr = 0;
 
     address public owner = msg.sender; // set deployer as owner of the storage contract
     mapping(uint256 => charity) charities;
+    uint256 numCharities = 0; // total number of charities
     // charity[] verifiedCharities;
 
     modifier ownerOnly() {
@@ -50,7 +52,8 @@ contract CharityStorage {
             charityOwner,
             name,
             category,
-            true
+            true,
+            false
         );
 
         charities[charityIdCtr] = newCharity;
@@ -73,5 +76,17 @@ contract CharityStorage {
 
     function getCharityName(uint256 id) public view returns (string memory) {
         return charities[id].name;
+    }
+
+    function getCharityWalletLocked(uint256 id) public view returns (bool) {
+        return charities[id].isWalletLocked;
+    }
+
+    function setCharityWalletLocked(uint256 id, bool locked) public ownerOnly {
+        charities[id].isWalletLocked = locked;
+    }
+
+    function getTotalCharities() public view returns (uint256) {
+        return numCharities;
     }
 }
