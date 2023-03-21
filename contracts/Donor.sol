@@ -27,20 +27,24 @@ contract Donor {
         _;
     }
 
-    modifier donorOnly(uint256 donorId) {
+    // modifier donorOnly(uint256 donorId) {
+    //     require(
+    //         donorStorage.getDonorAddr(donorId) == msg.sender,
+    //         "Only the donor is allowed to perform this operation"
+    //     );
+    //     _;
+    // }
+
+    modifier validDonor() {
         require(
-            donorStorage.getDonorAddr(donorId) == msg.sender,
-            "Only the donor is allowed to perform this operation"
+            donorStorage.isValidDonor(msg.sender),
+            "Donor address is not valid"
         );
         _;
     }
 
-    modifier isValidDonor(uint256 donorId) {
-        require(
-            donorStorage.getDonorActive(donorId),
-            "Donor ID given is not valid"
-        );
-        _;
+    function isValidDonor(address addr) public view returns (bool) {
+        return donorStorage.isValidDonor(addr);
     }
 
     function verifyDonor(address donorAddr) public ownerOnly {
@@ -58,17 +62,12 @@ contract Donor {
         emit donorActivated(donorStorage.getDonorAddr(donorId));
     }
 
-    function checkTokenBalance(
-        uint256 donorId
-    ) public view donorOnly(donorId) returns (uint256) {
+    function checkTokenBalance() public view validDonor returns (uint256) {
         return tokenContract.checkBalance(msg.sender);
     }
 
-    function withdrawTokens(
-        uint256 donorId,
-        uint256 numTokens
-    ) public isValidDonor(donorId) donorOnly(donorId) {
-        uint256 tokenBalance = checkTokenBalance(donorId);
+    function withdrawTokens(uint256 numTokens) public validDonor {
+        uint256 tokenBalance = checkTokenBalance();
         require(numTokens <= tokenBalance, "You don't have enough tokens");
 
         uint256 etherAmt = numTokens / 100;
@@ -78,9 +77,7 @@ contract Donor {
         tokenContract.transferTokens(address(this), numTokens);
     }
 
-    function getTokens(
-        uint256 donorId
-    ) public payable isValidDonor(donorId) donorOnly(donorId) {
+    function getTokens() public payable validDonor {
         require(
             msg.value >= 1E16,
             "At least 0.01ETH is required to get CharityToken"

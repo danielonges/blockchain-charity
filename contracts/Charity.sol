@@ -108,6 +108,10 @@ contract Charity {
         charityStorage.setCharityWalletLocked(charityId, true);
     }
 
+    function getCharityOwner(uint256 charityId) public view returns (address) {
+        return charityStorage.getCharityOwner(charityId);
+    }
+
     function isOwnerOfCharity(
         uint256 charityId,
         address charityOwner

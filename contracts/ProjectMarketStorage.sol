@@ -1,54 +1,86 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
+import "./Charity.sol";
 
 contract ProjectMarketStorage {
-    struct projectMarket {
-        uint256 projectMarketId;
+    struct project {
+        uint256 projectId;
         uint256 charityId;
         string title;
         string description;
         uint256 targetAmount;
+        donation[] donations;
         bool isActive;
     }
 
-    uint256 projectMarketIdCtr = 0;
+    struct donation {
+        uint256 projectId;
+        address donor;
+        uint256 amt;
+    }
+
+    uint256 projectIdCtr = 0;
+    Charity charityContract;
 
     address public owner = msg.sender; // set deployer as owner of the storage contract
-    mapping(uint256 => projectMarket) allProjectMarkets; // mapping of projectMarket ID to projectMarket
-    mapping(uint256 => projectMarket[]) projectMarketsByCharity; // mapping of charity ID to list of projectMarkets
+    mapping(uint256 => project) allProjects; // mapping of projectMarket ID to projectMarket
+    mapping(uint256 => project[]) projectsByCharity; // mapping of charity ID to list of projectMarkets
 
-    function addProjectMarket(
+    constructor(Charity charityAddress) {
+        charityContract = charityAddress;
+    }
+
+    modifier ownerOnly() {
+        require(
+            msg.sender == owner,
+            "Only the owner of this contract is allowed to perform this operation"
+        );
+        _;
+    }
+
+    function addProjectToMarket(
         uint256 charityId,
         string memory title,
         string memory description,
         uint256 targetAmount
     ) public returns (uint256) {
-        projectMarket memory newProjectMarket = projectMarket(
-            projectMarketIdCtr,
+        donation[] memory donations;
+        project memory newProject = project(
+            projectIdCtr,
             charityId,
             title,
             description,
             targetAmount,
+            donations,
             true
         );
 
-        allProjectMarkets[projectMarketIdCtr] = newProjectMarket;
-        projectMarketsByCharity[charityId].push(newProjectMarket);
+        allProjects[projectIdCtr] = newProject;
+        projectsByCharity[charityId].push(newProject);
 
-        return projectMarketIdCtr++;
+        return projectIdCtr++;
     }
 
-    function closeProjectMarket(
-        uint256 charityId,
-        uint256 projectMarketId
-    ) public {
-        allProjectMarkets[projectMarketId].isActive = false;
-        projectMarketsByCharity[charityId][projectMarketId].isActive = false;
+    function closeProject(uint256 charityId, uint256 projectId) public {
+        allProjects[projectId].isActive = false;
+        projectsByCharity[charityId][projectId].isActive = false;
     }
 
-    function getProjectMarketActive(
-        uint256 projectMarketId
-    ) public view returns (bool) {
-        return allProjectMarkets[projectMarketId].isActive;
+    function getProjectActive(uint256 projectId) public view returns (bool) {
+        return allProjects[projectId].isActive;
+    }
+
+    function getProjectOwner(uint256 projectId) public view returns (address) {
+        return
+            charityContract.getCharityOwner(allProjects[projectId].charityId);
+    }
+
+    function addDonationToProject(
+        uint256 projectId,
+        uint256 amt,
+        address donor
+    ) public ownerOnly {
+        donation memory newDonation = donation(projectId, donor, amt);
+        allProjects[projectId].donations.push(newDonation);
     }
 }
