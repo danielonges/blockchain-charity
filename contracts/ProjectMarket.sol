@@ -14,6 +14,8 @@ contract ProjectMarket {
     event projectListed(uint256 charityId);
     event projectClosed(uint256 charityId, uint256 projectMarketId);
     event donationMade(uint256 projectId, address donor);
+    event proofSubmitted(uint256 projectId, uint256 amount);
+    event proofVerified(uint256[] donations);
 
     constructor(
         ProjectMarketStorage projectMarketAddress,
@@ -26,6 +28,11 @@ contract ProjectMarket {
         tokenContract = tokenAddress;
         charityContract = charityAddress;
         donorContract = donorAddress;
+    }
+
+    modifier contractOwnerOnly() {
+        require(msg.sender == owner, "Only contract owner can perform this action!");
+        _;
     }
 
     modifier owningCharityOnly(uint256 charityId) {
@@ -108,5 +115,15 @@ contract ProjectMarket {
         tokenContract.transferTokensFrom(msg.sender, projectOwner, amt);
 
         emit donationMade(projectId, msg.sender);
+    }
+
+    function submitProofOfUsage(uint256 projectId, uint256 amount) public {
+	    projectMarketStorage.addProofOfUsageToProject(projectId, amount);
+        emit proofSubmitted(projectId, amount);
+    }
+
+    function verifyProofOfUsage(uint256[] memory donations) public contractOwnerOnly() {
+        projectMarketStorage.addProofOfUsageToDonations(donations);
+        emit proofVerified(donations);
     }
 }

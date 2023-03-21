@@ -3,29 +3,42 @@ pragma solidity ^0.8.0;
 import "./Charity.sol";
 
 contract ProjectMarketStorage {
+    enum DonationType {
+        ONETIME,
+        RECURRING
+    }
+
     struct project {
         uint256 projectId;
         uint256 charityId;
         string title;
         string description;
         uint256 targetAmount;
-        donation[] donations;
+        // donation[] donations;
         bool isActive;
     }
 
     struct donation {
+        uint256 donationId;
         uint256 projectId;
         address donor;
         uint256 amt;
+        uint256 transactionDate;
+        uint256 timeOfProofUpload;
+        uint256 timeTakenToVerify;
+        DonationType donationType;
     }
 
     uint256 projectIdCtr = 0;
+    uint256 donationIdCtr = 0;
     Charity charityContract;
 
     address public owner = msg.sender; // set deployer as owner of the storage contract
-    mapping(uint256 => project) allProjects; // mapping of projectMarket ID to projectMarket
-    mapping(uint256 => project[]) projectsByCharity; // mapping of charity ID to list of projectMarkets
-
+    mapping(uint256 => project) public allProjects; // mapping of projectMarket ID to projectMarket
+    mapping(uint256 => donation) public allDonations; // mapping of donation ID to donation
+    mapping(uint256 => project[]) public projectsByCharity; // mapping of charity ID to list of projectMarkets
+    mapping(uint256 => donation[]) public donationsByProject; // mapping of project ID to list of donations
+    
     constructor(Charity charityAddress) {
         charityContract = charityAddress;
     }
@@ -38,20 +51,27 @@ contract ProjectMarketStorage {
         _;
     }
 
+    modifier owningCharityOnly(address charityAddress) {
+        require(charityAddress == msg.sender,
+            "Only owning charity can perform this action!"
+        );
+        _;
+    }
+
     function addProjectToMarket(
         uint256 charityId,
         string memory title,
         string memory description,
         uint256 targetAmount
     ) public returns (uint256) {
-        donation[] memory donations;
+        // donation[] memory donations;
         project memory newProject = project(
             projectIdCtr,
             charityId,
             title,
             description,
             targetAmount,
-            donations,
+            // donations,
             true
         );
 
@@ -78,9 +98,39 @@ contract ProjectMarketStorage {
     function addDonationToProject(
         uint256 projectId,
         uint256 amt,
-        address donor
-    ) public ownerOnly {
-        donation memory newDonation = donation(projectId, donor, amt);
-        allProjects[projectId].donations.push(newDonation);
+        address donor,
+        bool isRecurring
+    ) public ownerOnly returns (uint256) {
+        DonationType d = DonationType.ONETIME;
+        if (isRecurring) {
+            d = DonationType.RECURRING;
+        }
+        donation memory newDonation = donation(donationIdCtr, projectId, donor, amt, block.timestamp, 0, 0, d);
+        // allProjects[projectId].donations.push(newDonation);
+        allDonations[donationIdCtr] = newDonation;
+        donationsByProject[projectId].push(newDonation);
+        return donationIdCtr++;
+    }
+
+    function addProofOfUsageToProject(
+        uint256 projectId,
+        uint256 amount
+    ) public owningCharityOnly(getProjectOwner(projectId)) {
+        uint amt = 0;
+        for (uint i = 0; i < donationsByProject[projectId].length; i++) {
+            if (donationsByProject[projectId][i].timeOfProofUpload == 0) { // no proof yet
+                if (amt + donationsByProject[projectId][i].amt <= amount) {
+                    donationsByProject[projectId][i].timeOfProofUpload = block.timestamp;
+                }
+            }
+        }
+    }
+
+    function addProofOfUsageToDonations(
+        uint256[] memory donations
+    ) public {
+        for (uint i = 0; i < donations.length; i++) {
+            allDonations[i].timeTakenToVerify = block.timestamp - allDonations[i].timeOfProofUpload;
+        }
     }
 }
