@@ -26,4 +26,19 @@ contract CharityToken {
         // Transfers from tx.origin to receipient
         erc20Contract.transfer(recipient, amt);
     }
+
+    function transferTokensFrom(address from, address to, uint256 amt) public {
+        erc20Contract.transferFrom(from, to, amt);
+    }
+
+    function approveTokenSpending(address spender, uint256 amt) public {
+        erc20Contract.approve(spender, amt);
+    }
+
+    function checkApproval(
+        address approver,
+        address spender
+    ) public view returns (uint256) {
+        return erc20Contract.allowance(approver, spender);
+    }
 }

@@ -5,13 +5,13 @@ contract DonorStorage {
     struct donor {
         uint256 id;
         address donorAddr;
-        uint256 tokenBalance;
         bool isActive;
     }
 
     uint256 donorIdCtr = 0;
     address public owner = msg.sender;
-    mapping(uint256 => donor) donors;
+    mapping(uint256 => donor) donorsById; // map donorId to donor
+    mapping(address => donor) donorsByAddr; // map donor's address to donor
     donor[] allDonors;
 
     modifier ownerOnly() {
@@ -22,40 +22,21 @@ contract DonorStorage {
         _;
     }
 
-    modifier ownerOrDonorOnly(uint256 donorId) {
-        require(
-            msg.sender == owner || donors[donorId].donorAddr == msg.sender,
-            "Only the owner of the contract or the donor associated with the donor ID is allowed to perform this operation"
-        );
-        _;
-    }
-
-    modifier activeDonorId(uint256 id) {
-        require(donors[id].isActive, "Donor ID given is not valid or active");
-        _;
-    }
-
     function addDonor(address donorAddr) public ownerOnly returns (uint256) {
-        donor memory newDonor = donor(donorIdCtr, donorAddr, 0, true);
+        donor memory newDonor = donor(donorIdCtr, donorAddr, true);
 
-        donors[donorIdCtr] = newDonor;
+        donorsById[donorIdCtr] = newDonor;
         allDonors.push(newDonor);
 
         return donorIdCtr++;
     }
 
     function getDonorActive(uint256 id) public view returns (bool) {
-        return donors[id].isActive;
+        return donorsById[id].isActive;
     }
 
     function setDonorActive(uint256 id, bool active) public ownerOnly {
-        donors[id].isActive = active;
-    }
-
-    function getDonorBalance(
-        uint256 id
-    ) public view ownerOrDonorOnly(id) returns (uint256) {
-        return donors[id].tokenBalance;
+        donorsById[id].isActive = active;
     }
 
     function getNumDonors() public view returns (uint256) {
@@ -67,6 +48,10 @@ contract DonorStorage {
     }
 
     function getDonorAddr(uint256 id) public view returns (address) {
-        return donors[id].donorAddr;
+        return donorsById[id].donorAddr;
+    }
+
+    function isValidDonor(address addr) public view returns (bool) {
+        return donorsByAddr[addr].isActive;
     }
 }
