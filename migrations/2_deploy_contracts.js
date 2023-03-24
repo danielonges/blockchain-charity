@@ -3,7 +3,7 @@ const Charity = artifacts.require("Charity");
 const DonorStorage = artifacts.require("DonorStorage");
 const Donor = artifacts.require("Donor");
 const ProjectMarketStorage = artifacts.require("ProjectMarketStorage");
-const ProjectMarket = artifacts.require("ProjectMarketStorage");
+const ProjectMarket = artifacts.require("ProjectMarket");
 const CharityToken = artifacts.require("CharityToken");
 
 module.exports = (deployer, network, accounts) => {

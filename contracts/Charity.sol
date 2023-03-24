@@ -8,10 +8,12 @@ contract Charity {
     CharityStorage charityStorage;
     CharityToken charityTokenContract;
 
-    event charityVerified(address charity);
+    event charityVerified(address charity, uint256 charityId);
     event charitytDeactivated(address charity);
     event charityActivated(address charity);
     event withdrawCredits(address charity);
+    event charityWalletLocked(address charity);
+    event charityWalletUnlocked(address charity);
 
     constructor(
         CharityStorage charityAddress,
@@ -59,8 +61,12 @@ contract Charity {
         string memory name,
         CharityStorage.charityCategory category
     ) public ownerOnly {
-        charityStorage.addCharity(charityOwner, name, category);
-        emit charityVerified(charityOwner);
+        uint256 charityId = charityStorage.addCharity(
+            charityOwner,
+            name,
+            category
+        );
+        emit charityVerified(charityOwner, charityId);
     }
 
     function deactivateCharity(uint256 charityId) public ownerOnly {
@@ -106,6 +112,14 @@ contract Charity {
         uint256 charityId
     ) public ownerOnly isValidCharity(charityId) {
         charityStorage.setCharityWalletLocked(charityId, true);
+        emit charityWalletLocked(charityStorage.getCharityOwner(charityId));
+    }
+
+    function unlockWallet(
+        uint256 charityId
+    ) public ownerOnly isValidCharity(charityId) {
+        charityStorage.setCharityWalletLocked(charityId, false);
+        emit charityWalletUnlocked(charityStorage.getCharityOwner(charityId));
     }
 
     function getCharityOwner(uint256 charityId) public view returns (address) {
@@ -123,7 +137,17 @@ contract Charity {
         return charityStorage.getCharityActive(charityId);
     }
 
-    function getOwner() public view returns (address) {
-        return owner;
+    function getAllCharities()
+        public
+        view
+        returns (CharityStorage.charity[] memory)
+    {
+        return charityStorage.getAllCharities();
+    }
+
+    function getCharityDetails(
+        uint256 charityId
+    ) public view returns (CharityStorage.charity memory) {
+        return charityStorage.getCharityById(charityId);
     }
 }

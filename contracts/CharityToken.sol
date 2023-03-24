@@ -13,7 +13,7 @@ contract CharityToken {
         erc20Contract = e; // assign it to the variable erc20Contract
     }
 
-    function getTokens(address recipient, uint256 weiAmt) public payable {
+    function getTokens(address recipient, uint256 weiAmt) public {
         uint256 amt = weiAmt / (1000000000000000000 / 100); // Convert weiAmt to Charity Token
         erc20Contract.mint(recipient, amt);
     }

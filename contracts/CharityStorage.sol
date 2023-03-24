@@ -22,7 +22,8 @@ contract CharityStorage {
     uint256 charityIdCtr = 0;
 
     address public owner = msg.sender; // set deployer as owner of the storage contract
-    mapping(uint256 => charity) charities;
+    mapping(uint256 => charity) charitiesById;
+    mapping(address => charity) charitiesByAddr;
     // uint256 numCharities = 0; // total number of charities
     charity[] allCharities;
 
@@ -34,13 +35,13 @@ contract CharityStorage {
         _;
     }
 
-    modifier activeCharityId(uint256 id) {
-        require(
-            charities[id].isActive,
-            "Charity ID given is not valid or active"
-        );
-        _;
-    }
+    // modifier activeCharityId(uint256 id) {
+    //     require(
+    //         charitiesById[id].isActive || charitiesByAddr[msg.sender].isActive,
+    //         "Charity ID given is not valid or active"
+    //     );
+    //     _;
+    // }
 
     function addCharity(
         address charityOwner,
@@ -56,34 +57,34 @@ contract CharityStorage {
             false
         );
 
-        charities[charityIdCtr] = newCharity;
+        charitiesById[charityIdCtr] = newCharity;
         allCharities.push(newCharity);
 
         return charityIdCtr++;
     }
 
     function getCharityActive(uint256 id) public view returns (bool) {
-        return charities[id].isActive;
+        return charitiesById[id].isActive;
     }
 
     function setCharityActive(uint256 id, bool active) public ownerOnly {
-        charities[id].isActive = active;
+        charitiesById[id].isActive = active;
     }
 
     function getCharityOwner(uint256 id) public view returns (address) {
-        return charities[id].owner;
+        return charitiesById[id].owner;
     }
 
     function getCharityName(uint256 id) public view returns (string memory) {
-        return charities[id].name;
+        return charitiesById[id].name;
     }
 
     function getCharityWalletLocked(uint256 id) public view returns (bool) {
-        return charities[id].isWalletLocked;
+        return charitiesById[id].isWalletLocked;
     }
 
     function setCharityWalletLocked(uint256 id, bool locked) public ownerOnly {
-        charities[id].isWalletLocked = locked;
+        charitiesById[id].isWalletLocked = locked;
     }
 
     function getNumCharities() public view returns (uint256) {
@@ -92,5 +93,9 @@ contract CharityStorage {
 
     function getAllCharities() public view returns (charity[] memory) {
         return allCharities;
+    }
+
+    function getCharityById(uint256 id) public view returns (charity memory) {
+        return charitiesById[id];
     }
 }
