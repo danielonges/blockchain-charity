@@ -122,4 +122,8 @@ contract Charity {
     function isCharityActive(uint256 charityId) public view returns (bool) {
         return charityStorage.getCharityActive(charityId);
     }
+
+    function getOwner() public view returns (address) {
+        return owner;
+    }
 }

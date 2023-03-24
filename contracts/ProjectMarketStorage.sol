@@ -38,7 +38,8 @@ contract ProjectMarketStorage {
     mapping(uint256 => donation) public allDonations; // mapping of donation ID to donation
     mapping(uint256 => project[]) public projectsByCharity; // mapping of charity ID to list of projectMarkets
     mapping(uint256 => donation[]) public donationsByProject; // mapping of project ID to list of donations
-    
+    mapping(address => donation[]) transactions; // mapping of donor address to their past transactions
+
     constructor(Charity charityAddress) {
         charityContract = charityAddress;
     }
@@ -52,7 +53,8 @@ contract ProjectMarketStorage {
     }
 
     modifier owningCharityOnly(address charityAddress) {
-        require(charityAddress == msg.sender,
+        require(
+            charityAddress == msg.sender,
             "Only owning charity can perform this action!"
         );
         _;
@@ -105,7 +107,16 @@ contract ProjectMarketStorage {
         if (isRecurring) {
             d = DonationType.RECURRING;
         }
-        donation memory newDonation = donation(donationIdCtr, projectId, donor, amt, block.timestamp, 0, 0, d);
+        donation memory newDonation = donation(
+            donationIdCtr,
+            projectId,
+            donor,
+            amt,
+            block.timestamp,
+            0,
+            0,
+            d
+        );
         // allProjects[projectId].donations.push(newDonation);
         allDonations[donationIdCtr] = newDonation;
         donationsByProject[projectId].push(newDonation);
@@ -118,19 +129,21 @@ contract ProjectMarketStorage {
     ) public owningCharityOnly(getProjectOwner(projectId)) {
         uint amt = 0;
         for (uint i = 0; i < donationsByProject[projectId].length; i++) {
-            if (donationsByProject[projectId][i].timeOfProofUpload == 0) { // no proof yet
+            if (donationsByProject[projectId][i].timeOfProofUpload == 0) {
+                // no proof yet
                 if (amt + donationsByProject[projectId][i].amt <= amount) {
-                    donationsByProject[projectId][i].timeOfProofUpload = block.timestamp;
+                    donationsByProject[projectId][i].timeOfProofUpload = block
+                        .timestamp;
                 }
             }
         }
     }
 
-    function addProofOfUsageToDonations(
-        uint256[] memory donations
-    ) public {
+    function addProofOfUsageToDonations(uint256[] memory donations) public {
         for (uint i = 0; i < donations.length; i++) {
-            allDonations[i].timeTakenToVerify = block.timestamp - allDonations[i].timeOfProofUpload;
+            allDonations[i].timeTakenToVerify =
+                block.timestamp -
+                allDonations[i].timeOfProofUpload;
         }
     }
 }

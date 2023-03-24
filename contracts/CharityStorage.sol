@@ -28,7 +28,7 @@ contract CharityStorage {
 
     modifier ownerOnly() {
         require(
-            msg.sender == owner,
+            tx.origin == owner,
             "Only the owner of this contract is allowed to perform this operation"
         );
         _;
