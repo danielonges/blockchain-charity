@@ -12,7 +12,7 @@ contract ProjectMarket {
     Donor donorContract;
 
     event projectListed(uint256 charityId);
-    event projectClosed(uint256 charityId, uint256 projectMarketId);
+    event projectClosed(uint256 charityId, uint256 projectId);
     event donationMade(uint256 projectId, address donor);
     event proofSubmitted(uint256 projectId, uint256 amount);
     event proofVerified(uint256[] donations);
@@ -82,7 +82,7 @@ contract ProjectMarket {
         emit projectListed(charityId);
     }
 
-    function unlistProjectMarket(
+    function unlistProject(
         uint256 charityId,
         uint256 projectId
     )
@@ -93,6 +93,11 @@ contract ProjectMarket {
     {
         projectMarketStorage.closeProject(charityId, projectId);
         emit projectClosed(charityId, projectId);
+    }
+
+    function relistProject(uint256 charityId, uint256 projectId) public owningCharityOnly(charityId) activeCharityId(charityId) {
+        projectMarketStorage.setProjectActive(projectId, true);
+        emit projectListed(charityId);
     }
 
     // in order to donate, donor must first APPROVE the ProjectMarket contract's address to spend the specified ether
@@ -106,14 +111,14 @@ contract ProjectMarket {
             projectMarketStorage.getProjectActive(projectId),
             "Project ID provided is not valid or currently not active"
         );
-        require(
-            tokenContract.checkApproval(msg.sender, owner) >= amt,
-            "You did not authorise ProjectMarket to spend the specified amount to donate!"
-        );
+        // require(
+        //     tokenContract.checkApproval(msg.sender, owner) >= amt,
+        //     "You did not authorise ProjectMarket to spend the specified amount to donate!"
+        // );
 
         address projectOwner = projectMarketStorage.getProjectOwner(projectId);
-        tokenContract.transferTokensFrom(msg.sender, projectOwner, amt);
-
+        //tokenContract.transferTokensFrom(msg.sender, projectOwner, amt);
+        tokenContract.transferTokens(projectOwner, amt);
         emit donationMade(projectId, msg.sender);
     }
 
@@ -122,8 +127,20 @@ contract ProjectMarket {
         emit proofSubmitted(projectId, amount);
     }
 
+    function getAllProjectListings() public view returns (ProjectMarketStorage.project[] memory) {
+        return projectMarketStorage.getAllProjects();
+    }
+
+    function getProjectListingDetails(uint256 projectId) public view returns (ProjectMarketStorage.project memory) {
+        return projectMarketStorage.getProjectById(projectId);
+    }
+
     function verifyProofOfUsage(uint256[] memory donations) public contractOwnerOnly() {
         projectMarketStorage.addProofOfUsageToDonations(donations);
         emit proofVerified(donations);
+    }
+
+    function isProjectActive(uint256 projectId) public view returns (bool) {
+        return projectMarketStorage.getProjectActive(projectId);
     }
 }

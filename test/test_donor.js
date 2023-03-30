@@ -39,7 +39,7 @@ contract('Donor', function (accounts) {
   it('Get tokens', async () => {
     let getTokens = await donorInstance.getTokens({
       from: accounts[1],
-      value: 1000000000000000000
+      value: oneEth
     })
 
     // only valid donors can get tokens
