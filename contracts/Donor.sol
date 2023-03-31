@@ -12,6 +12,7 @@ contract Donor {
     event donorDeactivated(address donor);
     event donorActivated(address donor);
     event buyCredits(address donor);
+    event withdrawCredits(address donor);
 
     constructor(DonorStorage donorAddress, CharityToken token) {
         owner = msg.sender;
@@ -75,6 +76,7 @@ contract Donor {
 
         payable(msg.sender).transfer(weiAmt);
         tokenContract.transferTokens(address(this), numTokens);
+        emit withdrawCredits(msg.sender);
     }
 
     function getTokens() public payable validDonor {
@@ -82,7 +84,7 @@ contract Donor {
             msg.value >= 1E16,
             "At least 0.01ETH is required to get CharityToken"
         );
-        tokenContract.getTokens(msg.sender, msg.value / 1E16);
+        tokenContract.getTokens(msg.sender, msg.value);
         emit buyCredits(msg.sender);
     }
 }

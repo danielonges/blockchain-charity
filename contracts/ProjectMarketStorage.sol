@@ -49,6 +49,7 @@ contract ProjectMarketStorage {
     mapping(uint256 => project[]) public projectsByCharity; // mapping of charity ID to list of projectMarkets
     mapping(uint256 => donation[]) public donationsByProject; // mapping of project ID to list of donations
     mapping(address => donation[]) transactions; // mapping of donor address to their past transactions
+    project[] projects;
 
     constructor(Charity charityAddress) {
         charityContract = charityAddress;
@@ -89,7 +90,7 @@ contract ProjectMarketStorage {
 
         allProjects[projectIdCtr] = newProject;
         projectsByCharity[charityId].push(newProject);
-
+        projects.push(newProject);
         return projectIdCtr++;
     }
 
@@ -163,5 +164,17 @@ contract ProjectMarketStorage {
                     donationsByProject[projectId][i].transactionDate;
             }
         }
+    }
+
+    function getAllProjects() public view returns (project[] memory) {
+        return projects;
+    }
+
+    function getProjectById(uint256 id) public view returns (project memory) {
+        return allProjects[id];
+    }
+
+    function setProjectActive(uint256 id, bool active) public {
+        allProjects[id].isActive = active;
     }
 }
