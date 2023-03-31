@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 import "./Charity.sol";
+import "./CharityStorage.sol";
 
 contract ProjectMarketStorage {
     enum DonationType {
@@ -23,10 +24,19 @@ contract ProjectMarketStorage {
         uint256 projectId;
         address donor;
         uint256 amt;
+        uint256 amtVerified;
         uint256 transactionDate;
-        uint256 timeOfProofUpload;
+        // uint256 timeOfProofUpload;
         uint256 timeTakenToVerify;
         DonationType donationType;
+    }
+
+    struct proof {
+        uint256 proofId;
+        uint256 projectId;
+        uint256 amtVerified;
+        uint256 timeTakenToVerify;
+        CharityStorage.charityCategory category;
     }
 
     uint256 projectIdCtr = 0;
@@ -113,8 +123,8 @@ contract ProjectMarketStorage {
             projectId,
             donor,
             amt,
-            block.timestamp,
             0,
+            block.timestamp,
             0,
             d
         );
@@ -128,23 +138,31 @@ contract ProjectMarketStorage {
         uint256 projectId,
         uint256 amount
     ) public owningCharityOnly(getProjectOwner(projectId)) {
-        uint amt = 0;
+        uint amt = amount;
         for (uint i = 0; i < donationsByProject[projectId].length; i++) {
-            if (donationsByProject[projectId][i].timeOfProofUpload == 0) {
-                // no proof yet
-                if (amt + donationsByProject[projectId][i].amt <= amount) {
-                    donationsByProject[projectId][i].timeOfProofUpload = block
-                        .timestamp;
-                }
+            if (amt == 0) {
+                break;
             }
-        }
-    }
-
-    function addProofOfUsageToDonations(uint256[] memory donations) public {
-        for (uint i = 0; i < donations.length; i++) {
-            allDonations[i].timeTakenToVerify =
-                block.timestamp -
-                allDonations[i].timeOfProofUpload;
+            if (
+                donationsByProject[projectId][i].amt !=
+                donationsByProject[projectId][i].amtVerified
+            ) {
+                // not fully verified
+                uint256 diff = donationsByProject[projectId][i].amt -
+                    donationsByProject[projectId][i].amtVerified;
+                uint256 amtToAdd = 0;
+                if (amt >= diff) {
+                    amtToAdd = diff;
+                    amt -= diff;
+                } else {
+                    amtToAdd = amt;
+                    amt = 0;
+                }
+                donationsByProject[projectId][i].amtVerified += amtToAdd;
+                donationsByProject[projectId][i].timeTakenToVerify =
+                    block.timestamp -
+                    donationsByProject[projectId][i].transactionDate;
+            }
         }
     }
 

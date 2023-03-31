@@ -14,8 +14,7 @@ contract ProjectMarket {
     event projectListed(uint256 charityId);
     event projectClosed(uint256 charityId, uint256 projectId);
     event donationMade(uint256 projectId, address donor);
-    event proofSubmitted(uint256 projectId, uint256 amount);
-    event proofVerified(uint256[] donations);
+    event proofVerified(uint256 projectId, uint256 amount);
 
     constructor(
         ProjectMarketStorage projectMarketAddress,
@@ -31,7 +30,10 @@ contract ProjectMarket {
     }
 
     modifier contractOwnerOnly() {
-        require(msg.sender == owner, "Only contract owner can perform this action!");
+        require(
+            msg.sender == owner,
+            "Only contract owner can perform this action!"
+        );
         _;
     }
 
@@ -122,10 +124,11 @@ contract ProjectMarket {
         emit donationMade(projectId, msg.sender);
     }
 
-    function submitProofOfUsage(uint256 projectId, uint256 amount) public {
-	    projectMarketStorage.addProofOfUsageToProject(projectId, amount);
-        emit proofSubmitted(projectId, amount);
+    function verifyProofOfUsage(uint256 projectId, uint256 amount) public {
+        projectMarketStorage.addProofOfUsageToProject(projectId, amount);
+        emit proofVerified(projectId, amount);
     }
+}
 
     function getAllProjectListings() public view returns (ProjectMarketStorage.project[] memory) {
         return projectMarketStorage.getAllProjects();
@@ -133,11 +136,6 @@ contract ProjectMarket {
 
     function getProjectListingDetails(uint256 projectId) public view returns (ProjectMarketStorage.project memory) {
         return projectMarketStorage.getProjectById(projectId);
-    }
-
-    function verifyProofOfUsage(uint256[] memory donations) public contractOwnerOnly() {
-        projectMarketStorage.addProofOfUsageToDonations(donations);
-        emit proofVerified(donations);
     }
 
     function isProjectActive(uint256 projectId) public view returns (bool) {
