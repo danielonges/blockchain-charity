@@ -16,7 +16,7 @@ contract DonorStorage {
 
     modifier ownerOnly() {
         require(
-            msg.sender == owner,
+            tx.origin == owner,
             "Only the owner of this contract is allowed to perform this operation"
         );
         _;
@@ -26,6 +26,7 @@ contract DonorStorage {
         donor memory newDonor = donor(donorIdCtr, donorAddr, true);
 
         donorsById[donorIdCtr] = newDonor;
+        donorsByAddr[donorAddr] = newDonor;
         allDonors.push(newDonor);
 
         return donorIdCtr++;
