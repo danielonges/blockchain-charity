@@ -5,6 +5,7 @@ import "./CharityToken.sol";
 
 contract Charity {
     address public owner;
+    bool public contractStopped;
     CharityStorage charityStorage;
     CharityToken charityTokenContract;
 
@@ -56,6 +57,15 @@ contract Charity {
         _;
     }
 
+    modifier haltInEmergency() {
+        require(!contractStopped, "Contract stopped!");
+        _;
+    }
+
+    function toggleContractStopped() public ownerOnly {
+        contractStopped != contractStopped;
+    }
+
     function verifyCharity(
         address charityOwner,
         string memory name,
@@ -93,6 +103,7 @@ contract Charity {
         isValidCharity(charityId)
         owningCharityOnly(charityId)
         walletNotLocked(charityId)
+        haltInEmergency
     {
         uint256 charityTokensBalance = checkTokenBalance(charityId);
         require(

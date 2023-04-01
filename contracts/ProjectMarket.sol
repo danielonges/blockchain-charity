@@ -6,6 +6,7 @@ import "./Donor.sol";
 
 contract ProjectMarket {
     address public owner;
+    bool public contractStopped;
     ProjectMarketStorage projectMarketStorage;
     CharityToken tokenContract;
     Charity charityContract;
@@ -69,6 +70,16 @@ contract ProjectMarket {
         _;
     }
 
+
+    modifier haltInEmergency() {
+        require(!contractStopped, "Contract stopped!");
+        _;
+    }
+
+    function toggleContractStopped() public ownerOnly {
+        contractStopped != contractStopped;
+    }
+
     function listProject(
         uint256 charityId,
         string memory title,
@@ -106,7 +117,7 @@ contract ProjectMarket {
     function donateToProject(
         uint256 projectId,
         uint256 amt
-    ) public isValidDonor {
+    ) public isValidDonor haltInEmergency {
         uint256 balance = tokenContract.checkBalance(msg.sender);
         require(amt <= balance, "You don't have sufficient funds to donate!");
         require(
