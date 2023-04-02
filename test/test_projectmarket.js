@@ -84,10 +84,20 @@ contract('ProjectMarket', function (accounts) {
   })
 
   it('List Project', async () => {
-    let listProject = await projectMarketInstance.listProject(
+    let listProject1 = await projectMarketInstance.listProject(
       project.charityId,
       project.title,
       project.description,
+      project.targetAmount,
+      {
+        from: accounts[1]
+      }
+    )
+
+    let listProject2 = await projectMarketInstance.listProject(
+      project.charityId,
+      'Project 2',
+      'To be unlisted',
       project.targetAmount,
       {
         from: accounts[1]
@@ -109,25 +119,21 @@ contract('ProjectMarket', function (accounts) {
     )
 
     truffleAssert.eventEmitted(
-      listProject,
+      listProject1,
       'projectListed',
       (ev) => ev.charityId == project.charityId
     )
   })
 
   it('Unlist Project', async () => {
-    let unlistProject = await projectMarketInstance.unlistProject(
-      project.charityId,
-      projectId,
-      {
-        from: accounts[1]
-      }
-    )
-    assert.ok(!(await projectMarketInstance.isProjectActive(projectId)))
+    let unlistProject = await projectMarketInstance.unlistProject(1, {
+      from: accounts[1]
+    })
+    assert.ok(!(await projectMarketInstance.isProjectActive(1)))
 
     // only owning charity can unlist project
     await truffleAssert.reverts(
-      projectMarketInstance.unlistProject(project.charityId, projectId, {
+      projectMarketInstance.unlistProject(projectId, {
         from: accounts[2]
       }),
       'Only owning charity can perform this action!'
@@ -136,13 +142,12 @@ contract('ProjectMarket', function (accounts) {
     truffleAssert.eventEmitted(
       unlistProject,
       'projectClosed',
-      (ev) => ev.charityId == project.charityId && ev.projectId == projectId
+      (ev) => ev.projectId == 1
     )
   })
 
   it('View all project listings', async () => {
-    let allProjects = await projectMarketInstance.getAllProjectListings()
-    console.log('allProjects', allProjects)
+    let allProjects = await projectMarketInstance.getAllActiveProjectListings()
     const projectToCheck = allProjects[0]
     assert.strictEqual(
       allProjects.length,
@@ -194,9 +199,6 @@ contract('ProjectMarket', function (accounts) {
   })
 
   it('Donate to project', async () => {
-    await projectMarketInstance.relistProject(project.charityId, projectId, {
-      from: accounts[1]
-    })
     await donorInstance.getTokens({
       from: donor.donorAddr,
       value: oneEth
@@ -219,6 +221,59 @@ contract('ProjectMarket', function (accounts) {
       balanceDonor.toNumber(),
       90,
       'Error donating to project!'
+    )
+  })
+
+  it('Upload proof of donation', async () => {
+    let proofUpload = await projectMarketInstance.verifyProofOfUsage(
+      projectId,
+      10
+    )
+    let proofsByProject = await projectMarketInstance.getProofsByProject(
+      projectId
+    )
+    truffleAssert.eventEmitted(
+      proofUpload,
+      'proofVerified',
+      (ev) => ev.projectId == projectId && ev.amount == 10
+    )
+    assert.strictEqual(
+      proofsByProject.length,
+      1,
+      'Failed to view all donations by project'
+    )
+  })
+
+  it('View all donations by project', async () => {
+    let donationsByProject = await projectMarketInstance.getDonationsByProject(
+      projectId
+    )
+    assert.strictEqual(
+      donationsByProject.length,
+      1,
+      'Failed to view all donations by project'
+    )
+  })
+
+  it('View all proofs by project', async () => {
+    let proofsByProject = await projectMarketInstance.getProofsByProject(
+      projectId
+    )
+    assert.strictEqual(
+      proofsByProject.length,
+      1,
+      'Failed to view all proof by project'
+    )
+  })
+
+  it('View past donations by donor', async () => {
+    let donationsByDonor = await projectMarketInstance.viewPastDonationsByDonor(
+      { from: donor.donorAddr }
+    )
+    assert.strictEqual(
+      donationsByDonor.length,
+      1,
+      'Failed to view all donations by donor'
     )
   })
 })

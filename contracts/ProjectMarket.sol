@@ -17,7 +17,7 @@ contract ProjectMarket {
     uint256 internal unverifiedTimeLimit = 20 days;
 
     event projectListed(uint256 charityId);
-    event projectClosed(uint256 charityId, uint256 projectId);
+    event projectClosed(uint256 projectId);
     event donationMade(uint256 projectId, address donor);
     event proofVerified(uint256 projectId, uint256 amount);
 
@@ -60,7 +60,7 @@ contract ProjectMarket {
 
     modifier activeProjectId(uint256 projectMarketId) {
         require(
-            projectMarketStorage.getProjectActive(projectMarketId) == true,
+            projectMarketStorage.isProjectActive(projectMarketId) == true,
             "ProjectMarket ID given is not valid or active"
         );
         _;
@@ -106,23 +106,19 @@ contract ProjectMarket {
     }
 
     function unlistProject(
-        uint256 charityId,
         uint256 projectId
     )
         public
-        owningCharityOnly(charityId)
-        activeCharityId(charityId)
+        owningCharityOnly(projectMarketStorage.getProjectById(projectId).charityId)
+        activeCharityId(projectMarketStorage.getProjectById(projectId).charityId)
         activeProjectId(projectId)
     {
-        projectMarketStorage.closeProject(charityId, projectId);
-        emit projectClosed(charityId, projectId);
+        projectMarketStorage.closeProject(projectId);
+        emit projectClosed(projectId);
     }
 
-    function relistProject(
-        uint256 charityId,
-        uint256 projectId
-    ) public owningCharityOnly(charityId) activeCharityId(charityId) {
-        projectMarketStorage.setProjectActive(projectId, true);
+    function relistProject(uint256 charityId, uint256 projectId) public owningCharityOnly(charityId) activeCharityId(charityId) {
+        projectMarketStorage.setProjectActive(projectId);
         emit projectListed(charityId);
     }
 
@@ -134,7 +130,7 @@ contract ProjectMarket {
         uint256 balance = tokenContract.checkBalance(msg.sender);
         require(amt <= balance, "You don't have sufficient funds to donate!");
         require(
-            projectMarketStorage.getProjectActive(projectId),
+            projectMarketStorage.isProjectActive(projectId),
             "Project ID provided is not valid or currently not active"
         );
         // require(
@@ -152,6 +148,7 @@ contract ProjectMarket {
         address projectOwner = projectMarketStorage.getProjectOwner(projectId);
         //tokenContract.transferTokensFrom(msg.sender, projectOwner, amt);
         tokenContract.transferTokens(projectOwner, amt);
+        projectMarketStorage.addDonationToProject(projectId, amt, msg.sender, false);
         emit donationMade(projectId, msg.sender);
     }
 
@@ -192,13 +189,27 @@ contract ProjectMarket {
         return projectMarketStorage.getAllProjects();
     }
 
-    function getProjectListingDetails(
-        uint256 projectId
-    ) public view returns (ProjectMarketStorage.project memory) {
+    function getAllActiveProjectListings() public view returns (ProjectMarketStorage.project[] memory) {
+        return projectMarketStorage.getAllActiveProjects();
+    }
+    
+    function getProofsByProject(uint256 projectId) public view returns (ProjectMarketStorage.proof[] memory) {
+        return projectMarketStorage.getAllProofsByProject(projectId);
+    }
+
+    function getProjectListingDetails(uint256 projectId) public view returns (ProjectMarketStorage.project memory) {
         return projectMarketStorage.getProjectById(projectId);
     }
 
     function isProjectActive(uint256 projectId) public view returns (bool) {
-        return projectMarketStorage.getProjectActive(projectId);
+        return projectMarketStorage.isProjectActive(projectId);
+    }
+
+    function getDonationsByProject(uint256 projectId) public view returns (ProjectMarketStorage.donation[] memory) {
+        return projectMarketStorage.getDonationsByProject(projectId);
+    }
+
+    function viewPastDonationsByDonor() public view returns (ProjectMarketStorage.donation[] memory) {
+        return projectMarketStorage.getDonationsByDonor(msg.sender);
     }
 }

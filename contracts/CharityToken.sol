@@ -7,7 +7,7 @@ contract CharityToken {
     address owner;
     ERC20 erc20Contract;
 
-    constructor() public {
+    constructor() {
         owner = msg.sender;
         ERC20 e = new ERC20(); // create a new instance of ERC20
         erc20Contract = e; // assign it to the variable erc20Contract
