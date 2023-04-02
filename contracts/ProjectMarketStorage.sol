@@ -223,10 +223,4 @@ contract ProjectMarketStorage {
         }
         return filtered;
     }
-
-    function getDonationsByProject(
-        uint256 id
-    ) public view returns (donation[] memory) {
-        return donationsByProject[id];
-    }
 }

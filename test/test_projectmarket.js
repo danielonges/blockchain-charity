@@ -34,8 +34,16 @@ contract('ProjectMarket', function (accounts) {
     owner: accounts[1]
   }
 
-  const donor = {
+  const donor1 = {
     donorAddr: accounts[2]
+  }
+
+  const donor2 = {
+    donorAddr: accounts[3]
+  }
+
+  const donor3 = {
+    donorAddr: accounts[4]
   }
 
   const projectId = 0
@@ -45,7 +53,7 @@ contract('ProjectMarket', function (accounts) {
     targetAmount: 100,
     charityId: 0,
     charityAddr: charity.owner,
-    donorAddr: donor.donorAddr
+    donorAddr: donor1.donorAddr
   }
 
   it('Verify Charity', async () => {
@@ -69,12 +77,22 @@ contract('ProjectMarket', function (accounts) {
   })
 
   it('Verify Donor', async () => {
-    let verifiedDonor = await donorInstance.verifyDonor(donor.donorAddr, {
+    let verifiedDonor = await donorInstance.verifyDonor(donor1.donorAddr, {
       from: accounts[0]
     })
 
+    // verify 2 more donors for testing
+    await donorInstance.verifyDonor(donor2.donorAddr, {
+      from: accounts[0]
+    })
+
+    await donorInstance.verifyDonor(donor3.donorAddr, {
+      from: accounts[0]
+    })
     // donor that is created has an ID of 0
-    assert.ok(await donorInstance.isValidDonor(donor.donorAddr))
+    assert.ok(await donorInstance.isValidDonor(donor1.donorAddr))
+    assert.ok(await donorInstance.isValidDonor(donor2.donorAddr))
+    assert.ok(await donorInstance.isValidDonor(donor3.donorAddr))
 
     truffleAssert.eventEmitted(
       verifiedDonor,
@@ -199,27 +217,49 @@ contract('ProjectMarket', function (accounts) {
   })
 
   it('Donate to project', async () => {
+    // donor 1 donates 50 tokens
     await donorInstance.getTokens({
-      from: donor.donorAddr,
+      from: donor1.donorAddr,
       value: oneEth
     })
-    await charityTokenInstance.approveTokenSpending(donor.donorAddr, 10)
+    await charityTokenInstance.approveTokenSpending(donor1.donorAddr, 50)
     let donateToProject = await projectMarketInstance.donateToProject(
       projectId,
-      10,
-      { from: donor.donorAddr }
+      50,
+      { from: donor1.donorAddr }
     )
+
+    // donor 2 donates 40 tokens
+    await donorInstance.getTokens({
+      from: donor2.donorAddr,
+      value: oneEth
+    })
+    await charityTokenInstance.approveTokenSpending(donor2.donorAddr, 40)
+    await projectMarketInstance.donateToProject(projectId, 40, {
+      from: donor2.donorAddr
+    })
+
+    // donor 3 donates 40 tokens
+    await donorInstance.getTokens({
+      from: donor3.donorAddr,
+      value: oneEth
+    })
+    await charityTokenInstance.approveTokenSpending(donor3.donorAddr, 40)
+    await projectMarketInstance.donateToProject(projectId, 40, {
+      from: donor3.donorAddr
+    })
+
     truffleAssert.eventEmitted(
       donateToProject,
       'donationMade',
-      (ev) => ev.projectId == projectId && ev.donor == donor.donorAddr
+      (ev) => ev.projectId == projectId && ev.donor == donor1.donorAddr
     )
     let balanceDonor = await donorInstance.checkTokenBalance({
-      from: donor.donorAddr
+      from: donor1.donorAddr
     })
     assert.strictEqual(
       balanceDonor.toNumber(),
-      90,
+      50,
       'Error donating to project!'
     )
   })
@@ -227,7 +267,7 @@ contract('ProjectMarket', function (accounts) {
   it('Upload proof of donation', async () => {
     let proofUpload = await projectMarketInstance.verifyProofOfUsage(
       projectId,
-      10
+      100
     )
     let proofsByProject = await projectMarketInstance.getProofsByProject(
       projectId
@@ -235,7 +275,7 @@ contract('ProjectMarket', function (accounts) {
     truffleAssert.eventEmitted(
       proofUpload,
       'proofVerified',
-      (ev) => ev.projectId == projectId && ev.amount == 10
+      (ev) => ev.projectId == projectId && ev.amount == 100
     )
     assert.strictEqual(
       proofsByProject.length,
@@ -248,9 +288,10 @@ contract('ProjectMarket', function (accounts) {
     let donationsByProject = await projectMarketInstance.getDonationsByProject(
       projectId
     )
+    console.log('donationsByProject', donationsByProject)
     assert.strictEqual(
       donationsByProject.length,
-      1,
+      3,
       'Failed to view all donations by project'
     )
   })
@@ -268,8 +309,9 @@ contract('ProjectMarket', function (accounts) {
 
   it('View past donations by donor', async () => {
     let donationsByDonor = await projectMarketInstance.viewPastDonationsByDonor(
-      { from: donor.donorAddr }
+      { from: donor3.donorAddr }
     )
+    console.log('donationsByDonor', donationsByDonor)
     assert.strictEqual(
       donationsByDonor.length,
       1,
