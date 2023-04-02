@@ -13,6 +13,9 @@ contract ProjectMarket {
     Charity charityContract;
     Donor donorContract;
 
+    uint256 internal unverifiedCtLimit = 100;
+    uint256 internal unverifiedTimeLimit = 20 days;
+
     event projectListed(uint256 charityId);
     event projectClosed(uint256 charityId, uint256 projectId);
     event donationMade(uint256 projectId, address donor);
@@ -71,7 +74,6 @@ contract ProjectMarket {
         _;
     }
 
-
     modifier haltInEmergency() {
         require(!contractStopped, "Contract stopped!");
         _;
@@ -84,7 +86,7 @@ contract ProjectMarket {
         locked = false;
     }
 
-    function toggleContractStopped() public ownerOnly {
+    function toggleContractStopped() public view contractOwnerOnly {
         contractStopped != contractStopped;
     }
 
@@ -116,7 +118,10 @@ contract ProjectMarket {
         emit projectClosed(charityId, projectId);
     }
 
-    function relistProject(uint256 charityId, uint256 projectId) public owningCharityOnly(charityId) activeCharityId(charityId) {
+    function relistProject(
+        uint256 charityId,
+        uint256 projectId
+    ) public owningCharityOnly(charityId) activeCharityId(charityId) {
         projectMarketStorage.setProjectActive(projectId, true);
         emit projectListed(charityId);
     }
@@ -137,23 +142,59 @@ contract ProjectMarket {
         //     "You did not authorise ProjectMarket to spend the specified amount to donate!"
         // );
 
+        // perform check for automatic locking of charity wallet
+        if (isExceedUnverifiedLimit(projectId)) {
+            charityContract.lockWallet(
+                projectMarketStorage.getProjectOwnerId(projectId)
+            );
+        }
+
         address projectOwner = projectMarketStorage.getProjectOwner(projectId);
         //tokenContract.transferTokensFrom(msg.sender, projectOwner, amt);
         tokenContract.transferTokens(projectOwner, amt);
         emit donationMade(projectId, msg.sender);
     }
 
+    // perform check for automatic locking of charity wallet
+    function isExceedUnverifiedLimit(
+        uint256 projectId
+    ) internal view returns (bool) {
+        ProjectMarketStorage.donation[] memory donations = projectMarketStorage
+            .getDonationsByProject(projectId);
+
+        uint256 totalUnverifiedAmt = 0;
+
+        for (uint256 i = 0; i < donations.length; i++) {
+            uint256 unverifiedAmt = donations[i].amt - donations[i].amtVerified;
+            if (
+                block.timestamp - donations[i].transactionDate >=
+                unverifiedTimeLimit
+            ) {
+                totalUnverifiedAmt += unverifiedAmt;
+            }
+            if (totalUnverifiedAmt >= unverifiedCtLimit) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     function verifyProofOfUsage(uint256 projectId, uint256 amount) public {
         projectMarketStorage.addProofOfUsageToProject(projectId, amount);
         emit proofVerified(projectId, amount);
     }
-}
 
-    function getAllProjectListings() public view returns (ProjectMarketStorage.project[] memory) {
+    function getAllProjectListings()
+        public
+        view
+        returns (ProjectMarketStorage.project[] memory)
+    {
         return projectMarketStorage.getAllProjects();
     }
 
-    function getProjectListingDetails(uint256 projectId) public view returns (ProjectMarketStorage.project memory) {
+    function getProjectListingDetails(
+        uint256 projectId
+    ) public view returns (ProjectMarketStorage.project memory) {
         return projectMarketStorage.getProjectById(projectId);
     }
 
