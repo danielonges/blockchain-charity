@@ -108,6 +108,12 @@ contract ProjectMarketStorage {
             charityContract.getCharityOwner(allProjects[projectId].charityId);
     }
 
+    function getProjectOwnerId(
+        uint256 projectId
+    ) public view returns (uint256) {
+        return allProjects[projectId].charityId;
+    }
+
     function addDonationToProject(
         uint256 projectId,
         uint256 amt,
@@ -176,5 +182,11 @@ contract ProjectMarketStorage {
 
     function setProjectActive(uint256 id, bool active) public {
         allProjects[id].isActive = active;
+    }
+
+    function getDonationsByProject(
+        uint256 id
+    ) public view returns (donation[] memory) {
+        return donationsByProject[id];
     }
 }
