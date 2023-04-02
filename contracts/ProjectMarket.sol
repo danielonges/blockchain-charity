@@ -7,6 +7,7 @@ import "./Donor.sol";
 contract ProjectMarket {
     address public owner;
     bool public contractStopped;
+    bool internal locked;
     ProjectMarketStorage projectMarketStorage;
     CharityToken tokenContract;
     Charity charityContract;
@@ -76,6 +77,13 @@ contract ProjectMarket {
         _;
     }
 
+    modifier noReentrant() {
+        require(!locked, "No re-entrancy!");
+        locked = true;
+        _;
+        locked = false;
+    }
+
     function toggleContractStopped() public ownerOnly {
         contractStopped != contractStopped;
     }
@@ -117,7 +125,7 @@ contract ProjectMarket {
     function donateToProject(
         uint256 projectId,
         uint256 amt
-    ) public isValidDonor haltInEmergency {
+    ) public isValidDonor haltInEmergency noReentrant {
         uint256 balance = tokenContract.checkBalance(msg.sender);
         require(amt <= balance, "You don't have sufficient funds to donate!");
         require(
