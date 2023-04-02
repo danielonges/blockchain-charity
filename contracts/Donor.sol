@@ -58,7 +58,7 @@ contract Donor {
         emit donorDeactivated(donorStorage.getDonorAddr(donorId));
     }
 
-    function activateCharity(uint256 donorId) public ownerOnly {
+    function activateDonor(uint256 donorId) public ownerOnly {
         donorStorage.setDonorActive(donorId, true);
         emit donorActivated(donorStorage.getDonorAddr(donorId));
     }

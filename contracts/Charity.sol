@@ -161,4 +161,9 @@ contract Charity {
     ) public view returns (CharityStorage.charity memory) {
         return charityStorage.getCharityById(charityId);
     }
+
+    function getCategoryByCharity(uint256 charityId) public view returns (CharityStorage.charityCategory) {
+        CharityStorage.charity memory charity = charityStorage.getCharityById(charityId);
+        return charity.category;
+    }
 }
