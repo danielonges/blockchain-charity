@@ -27,7 +27,7 @@ contract Charity {
 
     modifier ownerOnly() {
         require(
-            msg.sender == owner,
+            msg.sender == owner || tx.origin == owner,
             "Only the owner of this contract is allowed to perform this operation"
         );
         _;
@@ -63,7 +63,7 @@ contract Charity {
     }
 
     function toggleContractStopped() public ownerOnly {
-        contractStopped != contractStopped;
+        contractStopped = !contractStopped;
     }
 
     function verifyCharity(
@@ -162,8 +162,12 @@ contract Charity {
         return charityStorage.getCharityById(charityId);
     }
 
-    function getCategoryByCharity(uint256 charityId) public view returns (CharityStorage.charityCategory) {
-        CharityStorage.charity memory charity = charityStorage.getCharityById(charityId);
+    function getCategoryByCharity(
+        uint256 charityId
+    ) public view returns (CharityStorage.charityCategory) {
+        CharityStorage.charity memory charity = charityStorage.getCharityById(
+            charityId
+        );
         return charity.category;
     }
 }
