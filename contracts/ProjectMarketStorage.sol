@@ -99,7 +99,8 @@ contract ProjectMarketStorage {
 
     function closeProject(uint256 projectId) public {
         allProjects[projectId].isActive = false;
-        projectsByCharity[getProjectById(projectId).charityId][projectId].isActive = false;
+        projectsByCharity[getProjectById(projectId).charityId][projectId]
+            .isActive = false;
         numActiveListings--;
     }
 
@@ -159,16 +160,32 @@ contract ProjectMarketStorage {
         proofsByProject[projectId].push(newProof);
         for (uint i = 0; i < donationsByProject[projectId].length; i++) {
             uint256 donationId = donationsByProject[projectId][i].donationId;
-            if (donationsByProject[projectId][i].timeTakenToVerify == 0) { // not yet verified
-                uint256 amtNeededToFullyVerifyCurrDonation = donationsByProject[projectId][i].amt - donationsByProject[projectId][i].amtVerified;
-                if (amount >= amtNeededToFullyVerifyCurrDonation) { // can just verify full amount
-                    amount -= amtNeededToFullyVerifyCurrDonation;                    
-                    donationsByProject[projectId][i].amtVerified = donationsByProject[projectId][i].amt;
-                    donationsByProject[projectId][i].timeTakenToVerify = block.timestamp - donationsByProject[projectId][i].transactionDate;
-                    allDonations[donationId].amtVerified = donationsByProject[projectId][i].amt;
-                    allDonations[donationId].timeTakenToVerify = block.timestamp - donationsByProject[projectId][i].transactionDate;
-                    uint256 averageTimeTakenToVerify = getAverageTimeTakenToVerifyByCharity(cId);
-                    setCharityAverageTimeTakenToVerify(cId, averageTimeTakenToVerify);
+            if (donationsByProject[projectId][i].timeTakenToVerify == 0) {
+                // not yet verified
+                uint256 amtNeededToFullyVerifyCurrDonation = donationsByProject[
+                    projectId
+                ][i].amt - donationsByProject[projectId][i].amtVerified;
+                if (amount >= amtNeededToFullyVerifyCurrDonation) {
+                    // can just verify full amount
+                    amount -= amtNeededToFullyVerifyCurrDonation;
+                    donationsByProject[projectId][i]
+                        .amtVerified = donationsByProject[projectId][i].amt;
+                    donationsByProject[projectId][i].timeTakenToVerify =
+                        block.timestamp -
+                        donationsByProject[projectId][i].transactionDate;
+                    allDonations[donationId].amtVerified = donationsByProject[
+                        projectId
+                    ][i].amt;
+                    allDonations[donationId].timeTakenToVerify =
+                        block.timestamp -
+                        donationsByProject[projectId][i].transactionDate;
+                    uint256 averageTimeTakenToVerify = getAverageTimeTakenToVerifyByCharity(
+                            cId
+                        );
+                    setCharityAverageTimeTakenToVerify(
+                        cId,
+                        averageTimeTakenToVerify
+                    );
                     incrementOrDecrementNumVerifiedTransaction(cId, true);
                     incrementOrDecrementNumUnverifiedTransaction(cId, false);
                 } else {
@@ -197,7 +214,9 @@ contract ProjectMarketStorage {
         return active;
     }
 
-    function getAllProofsByProject(uint256 projectId) public view returns (proof[] memory) {
+    function getAllProofsByProject(
+        uint256 projectId
+    ) public view returns (proof[] memory) {
         return proofsByProject[projectId];
     }
 
@@ -214,12 +233,18 @@ contract ProjectMarketStorage {
         numActiveListings++;
     }
 
-    function getDonationsByProject(uint256 projectId) public view returns (donation[] memory) {
+    function getDonationsByProject(
+        uint256 projectId
+    ) public view returns (donation[] memory) {
         return donationsByProject[projectId];
     }
 
-    function getDonationsByDonor(address donor) public view returns (donation[] memory) {
-        donation[] memory filtered = new donation[](donationsByDonor[donor].length);
+    function getDonationsByDonor(
+        address donor
+    ) public view returns (donation[] memory) {
+        donation[] memory filtered = new donation[](
+            donationsByDonor[donor].length
+        );
         uint256 idx = 0;
         for (uint256 i = 0; i < numDonations; i++) {
             if (allDonations[i].donor == donor) {
@@ -230,24 +255,46 @@ contract ProjectMarketStorage {
         return filtered;
     }
 
-    function setCharityAverageTimeTakenToVerify(uint256 charityId, uint256 timeTakenToVerify) public {
-        charityContract.setCharityAverageTimeTakenToVerify(charityId, timeTakenToVerify);
+    function setCharityAverageTimeTakenToVerify(
+        uint256 charityId,
+        uint256 timeTakenToVerify
+    ) public {
+        charityContract.setCharityAverageTimeTakenToVerify(
+            charityId,
+            timeTakenToVerify
+        );
     }
 
-    function incrementOrDecrementNumVerifiedTransaction(uint256 charityId, bool isIncrement) public {
-        charityContract.incrementOrDecrementNumVerifiedTransaction(charityId, isIncrement);
+    function incrementOrDecrementNumVerifiedTransaction(
+        uint256 charityId,
+        bool isIncrement
+    ) public {
+        charityContract.incrementOrDecrementNumVerifiedTransaction(
+            charityId,
+            isIncrement
+        );
     }
 
-    function incrementOrDecrementNumUnverifiedTransaction(uint256 charityId, bool isIncrement) public {
-        charityContract.incrementOrDecrementNumUnverifiedTransaction(charityId, isIncrement);
+    function incrementOrDecrementNumUnverifiedTransaction(
+        uint256 charityId,
+        bool isIncrement
+    ) public {
+        charityContract.incrementOrDecrementNumUnverifiedTransaction(
+            charityId,
+            isIncrement
+        );
     }
 
-    function getAverageTimeTakenToVerifyByCharity(uint256 charityId) public view returns (uint256) {
+    function getAverageTimeTakenToVerifyByCharity(
+        uint256 charityId
+    ) public view returns (uint256) {
         uint256 totalTime = 0;
         uint256 numDonationsVerifiable = 0;
         project[] memory allProjectsByCharity = projectsByCharity[charityId];
         for (uint256 i = 0; i < allProjectsByCharity.length; i++) {
-            donation[] memory allDonationsByProject = getDonationsByProject(allProjectsByCharity[i].projectId);
+            donation[] memory allDonationsByProject = getDonationsByProject(
+                allProjectsByCharity[i].projectId
+            );
             for (uint256 j = 0; j < allDonationsByProject.length; j++) {
                 if (allDonationsByProject[j].timeTakenToVerify > 0) {
                     totalTime += allDonationsByProject[j].timeTakenToVerify;
@@ -255,6 +302,7 @@ contract ProjectMarketStorage {
                 }
             }
         }
-        return totalTime / numDonationsVerifiable;
+        return
+            numDonationsVerifiable > 0 ? totalTime / numDonationsVerifiable : 0;
     }
 }

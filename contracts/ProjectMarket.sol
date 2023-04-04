@@ -13,13 +13,14 @@ contract ProjectMarket {
     Charity charityContract;
     Donor donorContract;
 
-    uint256 internal unverifiedCtLimit = 100;
-    uint256 internal unverifiedTimeLimit = 20 days;
+    uint256 public unverifiedCtLimit = 100;
+    uint256 public unverifiedTimeLimit = 20 days;
 
     event projectListed(uint256 charityId);
     event projectClosed(uint256 projectId);
     event donationMade(uint256 projectId, address donor);
     event proofVerified(uint256 projectId, uint256 amount);
+    event unverifiedDonationsExceeded(uint256 charityId, uint256 timestamp);
 
     constructor(
         ProjectMarketStorage projectMarketAddress,
@@ -109,15 +110,22 @@ contract ProjectMarket {
         uint256 projectId
     )
         public
-        owningCharityOnly(projectMarketStorage.getProjectById(projectId).charityId)
-        activeCharityId(projectMarketStorage.getProjectById(projectId).charityId)
+        owningCharityOnly(
+            projectMarketStorage.getProjectById(projectId).charityId
+        )
+        activeCharityId(
+            projectMarketStorage.getProjectById(projectId).charityId
+        )
         activeProjectId(projectId)
     {
         projectMarketStorage.closeProject(projectId);
         emit projectClosed(projectId);
     }
 
-    function relistProject(uint256 charityId, uint256 projectId) public owningCharityOnly(charityId) activeCharityId(charityId) {
+    function relistProject(
+        uint256 charityId,
+        uint256 projectId
+    ) public owningCharityOnly(charityId) activeCharityId(charityId) {
         projectMarketStorage.setProjectActive(projectId);
         emit projectListed(charityId);
     }
@@ -138,24 +146,22 @@ contract ProjectMarket {
         //     "You did not authorise ProjectMarket to spend the specified amount to donate!"
         // );
 
-        // perform check for automatic locking of charity wallet
-        if (isExceedUnverifiedLimit(projectId)) {
-            charityContract.lockWallet(
-                projectMarketStorage.getProjectOwnerId(projectId)
-            );
-        }
-
         address projectOwner = projectMarketStorage.getProjectOwner(projectId);
         //tokenContract.transferTokensFrom(msg.sender, projectOwner, amt);
         tokenContract.transferTokens(projectOwner, amt);
-        projectMarketStorage.addDonationToProject(projectId, amt, msg.sender, false);
+        projectMarketStorage.addDonationToProject(
+            projectId,
+            amt,
+            msg.sender,
+            false
+        );
         emit donationMade(projectId, msg.sender);
     }
 
-    // perform check for automatic locking of charity wallet
-    function isExceedUnverifiedLimit(
+    // perform check for locking of charity wallet
+    function checkUnverifiedDonations(
         uint256 projectId
-    ) internal view returns (bool) {
+    ) public contractOwnerOnly {
         ProjectMarketStorage.donation[] memory donations = projectMarketStorage
             .getDonationsByProject(projectId);
 
@@ -170,10 +176,14 @@ contract ProjectMarket {
                 totalUnverifiedAmt += unverifiedAmt;
             }
             if (totalUnverifiedAmt >= unverifiedCtLimit) {
-                return true;
+                uint256 charityId = projectMarketStorage.getProjectOwnerId(
+                    projectId
+                );
+                charityContract.lockWallet(charityId);
+                emit unverifiedDonationsExceeded(charityId, block.timestamp);
+                break;
             }
         }
-        return false;
     }
 
     function verifyProofOfUsage(uint256 projectId, uint256 amount, string memory utility) public {
@@ -189,15 +199,23 @@ contract ProjectMarket {
         return projectMarketStorage.getAllProjects();
     }
 
-    function getAllActiveProjectListings() public view returns (ProjectMarketStorage.project[] memory) {
+    function getAllActiveProjectListings()
+        public
+        view
+        returns (ProjectMarketStorage.project[] memory)
+    {
         return projectMarketStorage.getAllActiveProjects();
     }
-    
-    function getProofsByProject(uint256 projectId) public view returns (ProjectMarketStorage.proof[] memory) {
+
+    function getProofsByProject(
+        uint256 projectId
+    ) public view returns (ProjectMarketStorage.proof[] memory) {
         return projectMarketStorage.getAllProofsByProject(projectId);
     }
 
-    function getProjectListingDetails(uint256 projectId) public view returns (ProjectMarketStorage.project memory) {
+    function getProjectListingDetails(
+        uint256 projectId
+    ) public view returns (ProjectMarketStorage.project memory) {
         return projectMarketStorage.getProjectById(projectId);
     }
 
@@ -205,11 +223,17 @@ contract ProjectMarket {
         return projectMarketStorage.isProjectActive(projectId);
     }
 
-    function getDonationsByProject(uint256 projectId) public view returns (ProjectMarketStorage.donation[] memory) {
+    function getDonationsByProject(
+        uint256 projectId
+    ) public view returns (ProjectMarketStorage.donation[] memory) {
         return projectMarketStorage.getDonationsByProject(projectId);
     }
 
-    function viewPastDonationsByDonor() public view returns (ProjectMarketStorage.donation[] memory) {
+    function viewPastDonationsByDonor()
+        public
+        view
+        returns (ProjectMarketStorage.donation[] memory)
+    {
         return projectMarketStorage.getDonationsByDonor(msg.sender);
     } 
 }

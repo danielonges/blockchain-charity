@@ -27,7 +27,7 @@ contract Charity {
 
     modifier ownerOnly() {
         require(
-            msg.sender == owner,
+            msg.sender == owner || tx.origin == owner,
             "Only the owner of this contract is allowed to perform this operation"
         );
         _;
@@ -63,7 +63,7 @@ contract Charity {
     }
 
     function toggleContractStopped() public ownerOnly {
-        contractStopped != contractStopped;
+        contractStopped = !contractStopped;
     }
 
     function verifyCharity(
@@ -162,27 +162,51 @@ contract Charity {
         return charityStorage.getCharityById(charityId);
     }
 
-    function getCategoryByCharity(uint256 charityId) public view returns (CharityStorage.charityCategory) {
+    function getCategoryByCharity(
+        uint256 charityId
+    ) public view returns (CharityStorage.charityCategory) {
         return charityStorage.getCategoryByCharityId(charityId);
     }
 
-    function setCharityAverageTimeTakenToVerify(uint256 charityId, uint256 timeTakenToVerify) public {
-        charityStorage.setCharityAverageTimeTakenToVerify(charityId, timeTakenToVerify);
+    function setCharityAverageTimeTakenToVerify(
+        uint256 charityId,
+        uint256 timeTakenToVerify
+    ) public {
+        charityStorage.setCharityAverageTimeTakenToVerify(
+            charityId,
+            timeTakenToVerify
+        );
     }
 
-    function incrementOrDecrementNumVerifiedTransaction(uint256 charityId, bool isIncrement) public {
-        charityStorage.incrementOrDecrementNumVerifiedTransaction(charityId, isIncrement);
+    function incrementOrDecrementNumVerifiedTransaction(
+        uint256 charityId,
+        bool isIncrement
+    ) public {
+        charityStorage.incrementOrDecrementNumVerifiedTransaction(
+            charityId,
+            isIncrement
+        );
     }
 
-    function incrementOrDecrementNumUnverifiedTransaction(uint256 charityId, bool isIncrement) public {
-        charityStorage.incrementOrDecrementNumUnverifiedTransaction(charityId, isIncrement);
+    function incrementOrDecrementNumUnverifiedTransaction(
+        uint256 charityId,
+        bool isIncrement
+    ) public {
+        charityStorage.incrementOrDecrementNumUnverifiedTransaction(
+            charityId,
+            isIncrement
+        );
     }
 
-    function getNumVerifiedTransactions(uint256 charityId) public view returns (uint256) {
+    function getNumVerifiedTransactions(
+        uint256 charityId
+    ) public view returns (uint256) {
         return charityStorage.getNumVerifiedTransactions(charityId);
     }
 
-    function getNumUnverifiedTransactions(uint256 charityId) public view returns (uint256) {
+    function getNumUnverifiedTransactions(
+        uint256 charityId
+    ) public view returns (uint256) {
         return charityStorage.getNumUnverifiedTransactions(charityId);
     }
 }
