@@ -31,6 +31,7 @@ contract("ProjectMarket", function (accounts) {
   console.log("Testing ProjectMarket Contract");
 
   const charity = {
+    charityId: 0,
     name: "Leonard Foundation",
     category: CharityStorage.charityCategory.CHILDREN,
     owner: accounts[1]
@@ -270,11 +271,13 @@ contract("ProjectMarket", function (accounts) {
   it("Verify proof of donation", async () => {
     let proofUpload = await projectMarketInstance.verifyProofOfUsage(
       projectId,
-      100
+      100,
+      "Food"
     );
     let proofsByProject = await projectMarketInstance.getProofsByProject(
       projectId
     );
+    console.log("proofsByProject", proofsByProject);
     truffleAssert.eventEmitted(
       proofUpload,
       "proofVerified",
@@ -370,5 +373,26 @@ contract("ProjectMarket", function (accounts) {
     );
 
     assert.ok(oldBalance.isEqualTo(newBalance), "Unlock Wallet not working");
+  });
+
+  it("View charity metrics", async () => {
+    let charityDetails = await charityInstance.getCharityDetails(
+      charity.charityId
+    );
+    console.log("charityDetails", charityDetails);
+    assert.strictEqual(
+      Number(
+        await charityInstance.getNumVerifiedTransactions(charity.charityId)
+      ),
+      2,
+      "Failed to view number of verified transactions"
+    );
+    assert.strictEqual(
+      Number(
+        await charityInstance.getNumUnverifiedTransactions(charity.charityId)
+      ),
+      2,
+      "Failed to view number of unverified transactions"
+    );
   });
 });
