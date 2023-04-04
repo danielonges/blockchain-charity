@@ -176,8 +176,8 @@ contract ProjectMarket {
         return false;
     }
 
-    function verifyProofOfUsage(uint256 projectId, uint256 amount) public {
-        projectMarketStorage.addProofOfUsageToProject(projectId, amount);
+    function verifyProofOfUsage(uint256 projectId, uint256 amount, string memory utility) public {
+        projectMarketStorage.addProofOfUsageToProject(projectId, amount, utility);
         emit proofVerified(projectId, amount);
     }
 
@@ -211,5 +211,5 @@ contract ProjectMarket {
 
     function viewPastDonationsByDonor() public view returns (ProjectMarketStorage.donation[] memory) {
         return projectMarketStorage.getDonationsByDonor(msg.sender);
-    }
+    } 
 }

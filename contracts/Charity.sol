@@ -163,7 +163,26 @@ contract Charity {
     }
 
     function getCategoryByCharity(uint256 charityId) public view returns (CharityStorage.charityCategory) {
-        CharityStorage.charity memory charity = charityStorage.getCharityById(charityId);
-        return charity.category;
+        return charityStorage.getCategoryByCharityId(charityId);
+    }
+
+    function setCharityAverageTimeTakenToVerify(uint256 charityId, uint256 timeTakenToVerify) public {
+        charityStorage.setCharityAverageTimeTakenToVerify(charityId, timeTakenToVerify);
+    }
+
+    function incrementOrDecrementNumVerifiedTransaction(uint256 charityId, bool isIncrement) public {
+        charityStorage.incrementOrDecrementNumVerifiedTransaction(charityId, isIncrement);
+    }
+
+    function incrementOrDecrementNumUnverifiedTransaction(uint256 charityId, bool isIncrement) public {
+        charityStorage.incrementOrDecrementNumUnverifiedTransaction(charityId, isIncrement);
+    }
+
+    function getNumVerifiedTransactions(uint256 charityId) public view returns (uint256) {
+        return charityStorage.getNumVerifiedTransactions(charityId);
+    }
+
+    function getNumUnverifiedTransactions(uint256 charityId) public view returns (uint256) {
+        return charityStorage.getNumUnverifiedTransactions(charityId);
     }
 }

@@ -17,6 +17,9 @@ contract CharityStorage {
         charityCategory category;
         bool isActive;
         bool isWalletLocked;
+        uint256 averageTimeTakenToVerify;
+        uint256 numVerifiedTransactions;
+        uint256 numUnverifiedTransactions;
     }
 
     uint256 charityIdCtr = 0;
@@ -54,9 +57,11 @@ contract CharityStorage {
             name,
             category,
             true,
-            false
+            false,
+            0,
+            0,
+            0
         );
-
         charitiesById[charityIdCtr] = newCharity;
         allCharities.push(newCharity);
 
@@ -97,5 +102,53 @@ contract CharityStorage {
 
     function getCharityById(uint256 id) public view returns (charity memory) {
         return charitiesById[id];
+    }
+
+    function getCategoryByCharityId(uint256 charityId) public view returns (charityCategory) {
+        return charityCategory(charitiesById[charityId].category);
+    }
+
+    function setCharityAverageTimeTakenToVerify(uint256 charityId, uint256 timeTakenToVerify) public {
+        address charityAddr = getCharityOwner(charityId);
+        if (timeTakenToVerify > 0) {
+            charitiesById[charityId].averageTimeTakenToVerify = timeTakenToVerify;
+            charitiesByAddr[charityAddr].averageTimeTakenToVerify = timeTakenToVerify;
+            allCharities[charityId].averageTimeTakenToVerify = timeTakenToVerify;
+        }
+    }
+
+    function incrementOrDecrementNumVerifiedTransaction(uint256 charityId, bool isIncrement) public {
+        address charityAddr = getCharityOwner(charityId);
+        if (isIncrement) {
+            charitiesById[charityId].numVerifiedTransactions += 1;
+            charitiesByAddr[charityAddr].numVerifiedTransactions += 1;
+            allCharities[charityId].numVerifiedTransactions += 1;
+
+        } else {
+            charitiesById[charityId].numVerifiedTransactions -= 1;
+            charitiesByAddr[charityAddr].numVerifiedTransactions -= 1;
+            allCharities[charityId].numVerifiedTransactions -= 1;
+        }
+    }
+
+    function incrementOrDecrementNumUnverifiedTransaction(uint256 charityId, bool isIncrement) public {
+        address charityAddr = getCharityOwner(charityId);
+        if (isIncrement) {
+            charitiesById[charityId].numUnverifiedTransactions += 1;
+            charitiesByAddr[charityAddr].numUnverifiedTransactions += 1;
+            allCharities[charityId].numUnverifiedTransactions += 1;
+        } else {
+            charitiesById[charityId].numUnverifiedTransactions -= 1;
+            charitiesByAddr[charityAddr].numUnverifiedTransactions -= 1;
+            allCharities[charityId].numUnverifiedTransactions -= 1;
+        }
+    }
+
+    function getNumVerifiedTransactions(uint256 charityId) public view returns (uint256) {
+        return charitiesById[charityId].numVerifiedTransactions;
+    }
+
+     function getNumUnverifiedTransactions(uint256 charityId) public view returns (uint256) {
+        return charitiesById[charityId].numUnverifiedTransactions;
     }
 }
