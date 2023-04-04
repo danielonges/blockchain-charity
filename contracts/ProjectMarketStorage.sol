@@ -34,7 +34,7 @@ contract ProjectMarketStorage {
         uint256 projectId;
         uint256 amtVerified;
         uint256 timeOfUpload;
-        CharityStorage.charityCategory category;
+        string utility;
     }
 
     uint256 projectIdCtr = 0;
@@ -48,9 +48,10 @@ contract ProjectMarketStorage {
     mapping(uint256 => donation) public allDonations; // mapping of donation ID to donation
     mapping(uint256 => project[]) public projectsByCharity; // mapping of charity ID to list of projectMarkets
     mapping(uint256 => donation[]) public donationsByProject; // mapping of project ID to list of donations
-    mapping(address => donation[]) public donationsByDonor; // do not use this to access donations, purely for counting number of donations per donor
+    mapping(address => donation[]) public donationsByDonor; // don't use this to access donations, purely for counting number of donations per donor
     mapping(address => donation[]) transactions; // mapping of donor address to their past transactions
     mapping(uint256 => proof[]) proofsByProject; // mapping of project ID to list of proofs
+
     project[] projects;
     uint256 numDonations;
 
@@ -80,14 +81,12 @@ contract ProjectMarketStorage {
         string memory description,
         uint256 targetAmount
     ) public returns (uint256) {
-        // donation[] memory donations;
         project memory newProject = project(
             projectIdCtr,
             charityId,
             title,
             description,
             targetAmount,
-            // donations,
             true
         );
 
@@ -125,6 +124,7 @@ contract ProjectMarketStorage {
         if (isRecurring) {
             d = DonationType.RECURRING;
         }
+        uint256 cId = allProjects[projectId].charityId;
         donation memory newDonation = donation(
             donationIdCtr,
             projectId,
@@ -139,12 +139,14 @@ contract ProjectMarketStorage {
         donationsByProject[projectId].push(newDonation);
         donationsByDonor[donor].push(newDonation);
         numDonations++;
+        incrementOrDecrementNumUnverifiedTransaction(cId, true);
         return donationIdCtr++;
     }
 
     function addProofOfUsageToProject(
         uint256 projectId,
-        uint256 amount
+        uint256 amount,
+        string memory utility
     ) public returns (uint256) {
         uint256 cId = allProjects[projectId].charityId;
         proof memory newProof = proof(
@@ -152,19 +154,23 @@ contract ProjectMarketStorage {
             projectId,
             amount,
             block.timestamp,
-            charityContract.getCategoryByCharity(cId)
+            utility
         );
         proofsByProject[projectId].push(newProof);
         for (uint i = 0; i < donationsByProject[projectId].length; i++) {
             uint256 donationId = donationsByProject[projectId][i].donationId;
             if (donationsByProject[projectId][i].timeTakenToVerify == 0) { // not yet verified
                 uint256 amtNeededToFullyVerifyCurrDonation = donationsByProject[projectId][i].amt - donationsByProject[projectId][i].amtVerified;
-                if (amount >= amtNeededToFullyVerifyCurrDonation) {
+                if (amount >= amtNeededToFullyVerifyCurrDonation) { // can just verify full amount
                     amount -= amtNeededToFullyVerifyCurrDonation;                    
-                    donationsByProject[projectId][i].amtVerified = donationsByProject[projectId][i].amt; // can just verify full amount
+                    donationsByProject[projectId][i].amtVerified = donationsByProject[projectId][i].amt;
                     donationsByProject[projectId][i].timeTakenToVerify = block.timestamp - donationsByProject[projectId][i].transactionDate;
-                    allDonations[donationId].amtVerified = donationsByProject[projectId][i].amt; // can just verify full amount
+                    allDonations[donationId].amtVerified = donationsByProject[projectId][i].amt;
                     allDonations[donationId].timeTakenToVerify = block.timestamp - donationsByProject[projectId][i].transactionDate;
+                    uint256 averageTimeTakenToVerify = getAverageTimeTakenToVerifyByCharity(cId);
+                    setCharityAverageTimeTakenToVerify(cId, averageTimeTakenToVerify);
+                    incrementOrDecrementNumVerifiedTransaction(cId, true);
+                    incrementOrDecrementNumUnverifiedTransaction(cId, false);
                 } else {
                     donationsByProject[projectId][i].amtVerified += amount; // add remaining amount to amount verified
                     allDonations[donationId].amtVerified += amount;
@@ -222,5 +228,33 @@ contract ProjectMarketStorage {
             }
         }
         return filtered;
+    }
+
+    function setCharityAverageTimeTakenToVerify(uint256 charityId, uint256 timeTakenToVerify) public {
+        charityContract.setCharityAverageTimeTakenToVerify(charityId, timeTakenToVerify);
+    }
+
+    function incrementOrDecrementNumVerifiedTransaction(uint256 charityId, bool isIncrement) public {
+        charityContract.incrementOrDecrementNumVerifiedTransaction(charityId, isIncrement);
+    }
+
+    function incrementOrDecrementNumUnverifiedTransaction(uint256 charityId, bool isIncrement) public {
+        charityContract.incrementOrDecrementNumUnverifiedTransaction(charityId, isIncrement);
+    }
+
+    function getAverageTimeTakenToVerifyByCharity(uint256 charityId) public view returns (uint256) {
+        uint256 totalTime = 0;
+        uint256 numDonationsVerifiable = 0;
+        project[] memory allProjectsByCharity = projectsByCharity[charityId];
+        for (uint256 i = 0; i < allProjectsByCharity.length; i++) {
+            donation[] memory allDonationsByProject = getDonationsByProject(allProjectsByCharity[i].projectId);
+            for (uint256 j = 0; j < allDonationsByProject.length; j++) {
+                if (allDonationsByProject[j].timeTakenToVerify > 0) {
+                    totalTime += allDonationsByProject[j].timeTakenToVerify;
+                    numDonationsVerifiable++;
+                }
+            }
+        }
+        return totalTime / numDonationsVerifiable;
     }
 }
