@@ -326,7 +326,7 @@ contract("ProjectMarket", function (accounts) {
   });
 
   it("Automatically lock charity wallet", async () => {
-    // donor 1 donates 100 tokens
+    // donor 1 donates 100 tokens to the charity
     await donorInstance.getTokens({
       from: donor1.donorAddr,
       value: oneEth.multipliedBy(2)
@@ -338,10 +338,11 @@ contract("ProjectMarket", function (accounts) {
       { from: donor1.donorAddr }
     );
 
-    // fast forward to unverifiedTimeLimit days after
+    // fast forward to 20 days after
+    // if a charity has at least 100 tokens that are not verified after 20 days or more, the wallet will be locked
     await time.increase(await projectMarketInstance.unverifiedTimeLimit());
 
-    // contract owner checks for unverified limit, should introduce lock
+    // contract owner checks for unverified limit, and the lock should be activated
     let unverifiedDonationsExceeded =
       await projectMarketInstance.checkUnverifiedDonations(projectId, {
         from: accounts[0]
@@ -359,6 +360,7 @@ contract("ProjectMarket", function (accounts) {
       })
     );
 
+    // try to withdraw tokens from the wallet, should not be allowed
     await truffleAssert.reverts(
       charityInstance.withdrawTokens(charityId, 100, {
         from: accounts[1]
