@@ -18,6 +18,7 @@ contract("Charity", function (accounts) {
   });
   console.log("Testing Charity Contract");
 
+  // initialise testing constants
   const charityId = 0;
   const charity = {
     name: "Leonard Foundation",
@@ -26,6 +27,7 @@ contract("Charity", function (accounts) {
   };
 
   it("Verify Charity", async () => {
+    // create and verify charity
     let verifiedCharity = await charityInstance.verifyCharity(
       charity.owner,
       charity.name,
@@ -44,6 +46,7 @@ contract("Charity", function (accounts) {
   });
 
   it("Check Balance", async () => {
+    // add tokens to charity's wallet - for testing purposes
     await charityTokenInstance.getTokens(accounts[1], oneEth, {
       from: accounts[0]
     });
@@ -68,6 +71,7 @@ contract("Charity", function (accounts) {
         from: accounts[1]
       })
     );
+    // withdrawr 50 tokens from charity wallet
     const amtToWithdraw = 50;
     let withdraw = await charityInstance.withdrawTokens(
       charityId,
@@ -103,10 +107,12 @@ contract("Charity", function (accounts) {
   });
 
   it("Lock Wallet", async () => {
+    // lock charity's wallet
     let lockWallet = await charityInstance.lockWallet(charityId, {
       from: accounts[0]
     });
 
+    // try to withdraw from wallet, should not be allowed
     await truffleAssert.reverts(
       charityInstance.withdrawTokens(charityId, 10, {
         from: accounts[1]
@@ -122,6 +128,7 @@ contract("Charity", function (accounts) {
   });
 
   it("Unlock Wallet", async () => {
+    // check that wallet is locked initially and tokens can't be withdrawn
     const amtToWithdraw = 10;
     await truffleAssert.reverts(
       charityInstance.withdrawTokens(charityId, amtToWithdraw, {
@@ -130,6 +137,7 @@ contract("Charity", function (accounts) {
       "Wallet is locked and tokens cannot be withdrawn"
     );
 
+    // unlock the charity's wallet
     let unlockWallet = await charityInstance.unlockWallet(charityId, {
       from: accounts[0]
     });
@@ -139,6 +147,8 @@ contract("Charity", function (accounts) {
         from: accounts[1]
       })
     );
+
+    // withdraw tokens, should be successful
     let withdraw = await charityInstance.withdrawTokens(
       charityId,
       amtToWithdraw,
@@ -171,6 +181,7 @@ contract("Charity", function (accounts) {
   });
 
   it("View All Charities", async () => {
+    // get a list of all verified charities
     let allCharities = await charityInstance.getAllCharities();
     const charityToCheck = allCharities[0];
     assert.strictEqual(
@@ -191,6 +202,7 @@ contract("Charity", function (accounts) {
   });
 
   it("View Charity Details", async () => {
+    // view the details of a particular charity
     let charityToCheck = await charityInstance.getCharityDetails(charityId);
 
     assert.strictEqual(
