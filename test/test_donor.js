@@ -16,12 +16,13 @@ contract('Donor', function (accounts) {
   })
   console.log('Testing Donor Contract')
 
-  const donorId = 0
+  // initialise testing constants
   const donor = {
     donorAddr: accounts[1]
   }
 
   it('Verify Donor', async () => {
+    // create and verify donor
     let verifiedDonor = await donorInstance.verifyDonor(donor.donorAddr, {
       from: accounts[0]
     })
@@ -37,6 +38,7 @@ contract('Donor', function (accounts) {
   })
 
   it('Get tokens', async () => {
+    // add tokens to donor's wallet - for testing purposes
     let getTokens = await donorInstance.getTokens({
       from: accounts[1],
       value: oneEth
@@ -51,6 +53,7 @@ contract('Donor', function (accounts) {
       'Donor address is not valid'
     )
 
+    // require at least 0.01ETH to obtain a CharityToken
     await truffleAssert.reverts(
       donorInstance.getTokens({
         from: accounts[1],
@@ -88,10 +91,13 @@ contract('Donor', function (accounts) {
         from: accounts[1]
       })
     )
+
+    // withdraw 50 tokens from donor wallet
     const amtToWithdraw = 50
     let withdraw = await donorInstance.withdrawTokens(amtToWithdraw, {
       from: accounts[1]
     })
+
     const newBalance = new BigNumber(
       await donorInstance.checkTokenBalance({
         from: accounts[1]

@@ -186,7 +186,7 @@ contract ProjectMarket {
         }
     }
 
-    function verifyProofOfUsage(uint256 projectId, uint256 amount, string memory utility) public {
+    function verifyProofOfUsage(uint256 projectId, uint256 amount, string memory utility) public contractOwnerOnly {
         projectMarketStorage.addProofOfUsageToProject(projectId, amount, utility);
         emit proofVerified(projectId, amount);
     }
@@ -235,5 +235,17 @@ contract ProjectMarket {
         returns (ProjectMarketStorage.donation[] memory)
     {
         return projectMarketStorage.getDonationsByDonor(msg.sender);
-    } 
+    }
+
+    function getAmountVerifiedByDonation(uint256 donationId) public view returns (uint256) {
+        return projectMarketStorage.getAmtVerifiedByDonation(donationId);
+    }
+
+    function getAmountUnverifiedByDonation(uint256 donationId) public view returns (uint256) {
+        return projectMarketStorage.getAmtNotVerifiedByDonation(donationId);
+    }
+
+    function getTimeTakenToVerifyByDonation(uint256 donationId) public view returns (uint256) {
+        return projectMarketStorage.getAmtNotVerifiedByDonation(donationId);
+    }
 }

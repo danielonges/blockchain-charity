@@ -233,6 +233,10 @@ contract ProjectMarketStorage {
         numActiveListings++;
     }
 
+    function getDonationById(uint256 id) public view returns (donation memory) {
+        return allDonations[id];
+    }
+
     function getDonationsByProject(
         uint256 projectId
     ) public view returns (donation[] memory) {
@@ -285,6 +289,18 @@ contract ProjectMarketStorage {
         );
     }
 
+    function getAmtVerifiedByDonation(uint256 donationId) public view returns (uint256) {
+        return getDonationById(donationId).amtVerified;
+    }
+
+    function getTimeTakenToVerifyByDonation(uint256 donationId) public view returns (uint256) {
+        return getDonationById(donationId).amt - getDonationById(donationId).amtVerified;
+    }
+
+    function getAmtNotVerifiedByDonation(uint256 donationId) public view returns (uint256) {
+        return getDonationById(donationId).timeTakenToVerify;
+    }
+    
     function getAverageTimeTakenToVerifyByCharity(
         uint256 charityId
     ) public view returns (uint256) {
