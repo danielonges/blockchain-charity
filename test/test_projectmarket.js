@@ -331,7 +331,9 @@ contract("ProjectMarket", function (accounts) {
       from: donor1.donorAddr,
       value: oneEth.multipliedBy(2)
     });
-    await charityTokenInstance.approveTokenSpending(donor1.donorAddr, 100);
+    await charityTokenInstance.approveTokenSpending(accounts[1], 200, {
+      from: donor1.donorAddr
+    });
     let donateToProject = await projectMarketInstance.donateToProject(
       projectId,
       100,
@@ -360,6 +362,14 @@ contract("ProjectMarket", function (accounts) {
       })
     );
 
+    // try to donate tokens to the wallet, should not be allowed
+    await truffleAssert.reverts(
+      projectMarketInstance.donateToProject(projectId, 100, {
+        from: donor1.donorAddr
+      }),
+      "Charity wallet is locked! Donations cannot be made to this wallet currently"
+    );
+
     // try to withdraw tokens from the wallet, should not be allowed
     await truffleAssert.reverts(
       charityInstance.withdrawTokens(charityId, 100, {
@@ -374,7 +384,7 @@ contract("ProjectMarket", function (accounts) {
       })
     );
 
-    assert.ok(oldBalance.isEqualTo(newBalance), "Unlock Wallet not working");
+    assert.ok(oldBalance.isEqualTo(newBalance), "Auto lock wallet not working");
   });
 
   it("View charity metrics", async () => {

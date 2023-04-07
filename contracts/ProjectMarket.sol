@@ -141,6 +141,12 @@ contract ProjectMarket {
             projectMarketStorage.isProjectActive(projectId),
             "Project ID provided is not valid or currently not active"
         );
+        require(
+            !charityContract.isWalletLocked(
+                projectMarketStorage.getProjectOwnerId(projectId)
+            ),
+            "Charity wallet is locked! Donations cannot be made to this wallet currently"
+        );
         // require(
         //     tokenContract.checkApproval(msg.sender, owner) >= amt,
         //     "You did not authorise ProjectMarket to spend the specified amount to donate!"
@@ -186,8 +192,16 @@ contract ProjectMarket {
         }
     }
 
-    function verifyProofOfUsage(uint256 projectId, uint256 amount, string memory utility) public {
-        projectMarketStorage.addProofOfUsageToProject(projectId, amount, utility);
+    function verifyProofOfUsage(
+        uint256 projectId,
+        uint256 amount,
+        string memory utility
+    ) public {
+        projectMarketStorage.addProofOfUsageToProject(
+            projectId,
+            amount,
+            utility
+        );
         emit proofVerified(projectId, amount);
     }
 
@@ -235,5 +249,5 @@ contract ProjectMarket {
         returns (ProjectMarketStorage.donation[] memory)
     {
         return projectMarketStorage.getDonationsByDonor(msg.sender);
-    } 
+    }
 }
