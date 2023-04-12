@@ -133,6 +133,10 @@ contract Charity {
         emit charityWalletUnlocked(charityStorage.getCharityOwner(charityId));
     }
 
+    function isWalletLocked(uint256 charityId) public view returns (bool) {
+        return charityStorage.getCharityById(charityId).isWalletLocked;
+    }
+
     function getCharityOwner(uint256 charityId) public view returns (address) {
         return charityStorage.getCharityOwner(charityId);
     }
