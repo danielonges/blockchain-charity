@@ -30,6 +30,7 @@ contract("ProjectMarket", function (accounts) {
   });
   console.log("Testing ProjectMarket Contract");
 
+  // initialise testing constants
   const charity = {
     charityId: 0,
     name: "Leonard Foundation",
@@ -93,7 +94,8 @@ contract("ProjectMarket", function (accounts) {
     await donorInstance.verifyDonor(donor3.donorAddr, {
       from: accounts[0]
     });
-    // donor that is created has an ID of 0
+
+    // check that all 3 donors created are verified
     assert.ok(await donorInstance.isValidDonor(donor1.donorAddr));
     assert.ok(await donorInstance.isValidDonor(donor2.donorAddr));
     assert.ok(await donorInstance.isValidDonor(donor3.donorAddr));
@@ -130,7 +132,7 @@ contract("ProjectMarket", function (accounts) {
     await truffleAssert.reverts(
       projectMarketInstance.listProject(
         project.charityId,
-        "Project 2",
+        "Project Failed",
         "Failed test",
         100,
         {
@@ -151,6 +153,8 @@ contract("ProjectMarket", function (accounts) {
     let unlistProject = await projectMarketInstance.unlistProject(1, {
       from: accounts[1]
     });
+
+    // isActive boolean flag for project ID 1 will be false
     assert.ok(!(await projectMarketInstance.isProjectActive(1)));
 
     // only owning charity can unlist project
@@ -169,8 +173,11 @@ contract("ProjectMarket", function (accounts) {
   });
 
   it("View all project listings", async () => {
+    // returns a list of active projects
     let allProjects = await projectMarketInstance.getAllActiveProjectListings();
     const projectToCheck = allProjects[0];
+
+    // there are 2 projects but only 1 is active
     assert.strictEqual(
       allProjects.length,
       1,
@@ -261,6 +268,7 @@ contract("ProjectMarket", function (accounts) {
     let balanceDonor = await donorInstance.checkTokenBalance({
       from: donor1.donorAddr
     });
+    // donor 1 should only have 50 tokens left since he purchased 100 tokens and spent 50
     assert.strictEqual(
       balanceDonor.toNumber(),
       50,
@@ -269,15 +277,16 @@ contract("ProjectMarket", function (accounts) {
   });
 
   it("Verify proof of donation", async () => {
+    // charity submits proof of donation off the blockchain and contract owner verifies the proof on the blockchain
     let proofUpload = await projectMarketInstance.verifyProofOfUsage(
       projectId,
       100,
-      "Food"
+      "Food",
+      { from: accounts[0] }
     );
     let proofsByProject = await projectMarketInstance.getProofsByProject(
       projectId
     );
-    console.log("proofsByProject", proofsByProject);
     truffleAssert.eventEmitted(
       proofUpload,
       "proofVerified",
@@ -288,6 +297,41 @@ contract("ProjectMarket", function (accounts) {
       1,
       "Failed to view all donations by project"
     );
+    // total amount verified for donation ID 0 is 50, the donation is fully verified
+    assert.strictEqual(
+      Number(await projectMarketInstance.getAmountVerifiedByDonation(0)),
+      50,
+      "Failed to view amount verified of donation ID 0"
+    );
+    assert.ok(
+      Number(await projectMarketInstance.getTimeTakenToVerifyByDonation(0)) > 0,
+      "Time taken to verify is not recorded for donation ID 0"
+    );
+    // total amount verified for donation ID 1 is 40, the donation is fully verified
+    assert.strictEqual(
+      Number(await projectMarketInstance.getAmountVerifiedByDonation(1)),
+      40,
+      "Failed to view amount verified of donation ID 1"
+    );
+    // if a donation is fully verified, time taken to verify will be > 0
+    assert.ok(
+      Number(await projectMarketInstance.getTimeTakenToVerifyByDonation(1)) > 0,
+      "Time taken to verify is not recorded for donation ID 1"
+    );
+    // total amount verified for donation ID 2 is 10, since the proof's amount is only 100 tokens
+    // after verifying the first 2 donations, there are only 10 tokens left to verify donation ID 2
+    // the donation is partially verified
+    assert.strictEqual(
+      Number(await projectMarketInstance.getAmountVerifiedByDonation(2)),
+      10,
+      "Failed to view amount verified of donation ID 2"
+    );
+    // if a donation is not fully verified, time taken to verify will be == 0
+    assert.ok(
+      Number(await projectMarketInstance.getTimeTakenToVerifyByDonation(2)) ==
+        0,
+      "Time taken to verify is not recorded for donation ID 2"
+    );
   });
 
   it("View all donations by project", async () => {
@@ -295,6 +339,7 @@ contract("ProjectMarket", function (accounts) {
       projectId
     );
     console.log("donationsByProject", donationsByProject);
+    // 3 donations made for project ID 0
     assert.strictEqual(
       donationsByProject.length,
       3,
@@ -306,6 +351,7 @@ contract("ProjectMarket", function (accounts) {
     let proofsByProject = await projectMarketInstance.getProofsByProject(
       projectId
     );
+    // 1 proof verified for project ID 0
     assert.strictEqual(
       proofsByProject.length,
       1,
@@ -317,7 +363,7 @@ contract("ProjectMarket", function (accounts) {
     let donationsByDonor = await projectMarketInstance.viewPastDonationsByDonor(
       { from: donor3.donorAddr }
     );
-    console.log("donationsByDonor", donationsByDonor);
+    // donor only made 1 donation
     assert.strictEqual(
       donationsByDonor.length,
       1,
@@ -392,6 +438,7 @@ contract("ProjectMarket", function (accounts) {
       charity.charityId
     );
     console.log("charityDetails", charityDetails);
+    // total verified transactions are donations ID 0 and 1
     assert.strictEqual(
       Number(
         await charityInstance.getNumVerifiedTransactions(charity.charityId)
@@ -399,6 +446,7 @@ contract("ProjectMarket", function (accounts) {
       2,
       "Failed to view number of verified transactions"
     );
+    // total unverified transactions is donation ID 2
     assert.strictEqual(
       Number(
         await charityInstance.getNumUnverifiedTransactions(charity.charityId)

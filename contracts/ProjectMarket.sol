@@ -250,4 +250,22 @@ contract ProjectMarket {
     {
         return projectMarketStorage.getDonationsByDonor(msg.sender);
     }
+
+    function getAmountVerifiedByDonation(
+        uint256 donationId
+    ) public view returns (uint256) {
+        return projectMarketStorage.getAmtVerifiedByDonation(donationId);
+    }
+
+    function getAmountUnverifiedByDonation(
+        uint256 donationId
+    ) public view returns (uint256) {
+        return projectMarketStorage.getAmtNotVerifiedByDonation(donationId);
+    }
+
+    function getTimeTakenToVerifyByDonation(
+        uint256 donationId
+    ) public view returns (uint256) {
+        return projectMarketStorage.getAmtNotVerifiedByDonation(donationId);
+    }
 }
